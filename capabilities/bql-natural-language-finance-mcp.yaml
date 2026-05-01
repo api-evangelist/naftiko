@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Bql Natural Language Finance Mcp
+  description: A capability that exposes Query Language (BQL) as a natural-language MCP tool for an analyst agent.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: bql-natural-language-finance-mcp-rest
+    description: REST API for Bql Natural Language Finance Mcp.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: bql-natural-language-finance-mcp-mcp
+    description: MCP server exposing Bql Natural Language Finance Mcp for AI agents.
+    tools:
+    - name: example
+      description: A capability that exposes Query Language (BQL) as a natural-language MCP tool for an analyst agent.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: bql-natural-language-finance-mcp-skills
+    description: Agent Skill bundle for Bql Natural Language Finance Mcp.
+    skills:
+    - name: bql-natural-language-finance-mcp
+      description: A capability that exposes Query Language (BQL) as a natural-language MCP tool for an analyst agent.
+      location: file:///opt/naftiko/skills/bql-natural-language-finance-mcp
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that exposes Query Language (BQL) as a natural-language MCP tool for an analyst agent.
+        from:
+          sourceNamespace: bql-natural-language-finance-mcp-mcp
+          action: example

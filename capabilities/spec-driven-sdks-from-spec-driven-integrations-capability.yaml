@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Spec Driven Sdks From Spec Driven Integrations Capability
+  description: A capability paired with a follow-on episode/article on "spec-driven SDKs from spec-driven integrations."
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: spec-driven-sdks-from-spec-driven-integrations-capability-rest
+    description: REST API for Spec Driven Sdks From Spec Driven Integrations Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: spec-driven-sdks-from-spec-driven-integrations-capability-mcp
+    description: MCP server exposing Spec Driven Sdks From Spec Driven Integrations Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability paired with a follow-on episode/article on "spec-driven SDKs from spec-driven integrations."
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: spec-driven-sdks-from-spec-driven-integrations-capability-skills
+    description: Agent Skill bundle for Spec Driven Sdks From Spec Driven Integrations Capability.
+    skills:
+    - name: spec-driven-sdks-from-spec-driven-integrations-capability
+      description: A capability paired with a follow-on episode/article on "spec-driven SDKs from spec-driven integrations."
+      location: file:///opt/naftiko/skills/spec-driven-sdks-from-spec-driven-integrations-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability paired with a follow-on episode/article on "spec-driven SDKs from spec-driven integrations."
+        from:
+          sourceNamespace: spec-driven-sdks-from-spec-driven-integrations-capability-mcp
+          action: example

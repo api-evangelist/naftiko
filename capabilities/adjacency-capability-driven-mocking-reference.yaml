@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Adjacency Capability Driven Mocking Reference
+  description: A reference capability exercising capability-driven mocking against capability specs () plus runtime execution (Naftiko) — explicit partnership-boundary artifact.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: adjacency-capability-driven-mocking-reference-rest
+    description: REST API for Adjacency Capability Driven Mocking Reference.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: adjacency-capability-driven-mocking-reference-mcp
+    description: MCP server exposing Adjacency Capability Driven Mocking Reference for AI agents.
+    tools:
+    - name: example
+      description: A reference capability exercising capability-driven mocking against capability specs () plus runtime execution (Naftiko) — explicit partnership-boundary artifact.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: adjacency-capability-driven-mocking-reference-skills
+    description: Agent Skill bundle for Adjacency Capability Driven Mocking Reference.
+    skills:
+    - name: adjacency-capability-driven-mocking-reference
+      description: A reference capability exercising capability-driven mocking against capability specs () plus runtime execution (Naftiko) — explicit partnership-boundary artifact.
+      location: file:///opt/naftiko/skills/adjacency-capability-driven-mocking-reference
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A reference capability exercising capability-driven mocking against capability specs () plus runtime execution (Naftiko) — explicit partnership-boundary artifact.
+        from:
+          sourceNamespace: adjacency-capability-driven-mocking-reference-mcp
+          action: example

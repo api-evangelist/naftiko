@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Natixis Psd2 Open Banking Cohort Capability
+  description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: natixis-psd2-open-banking-cohort-capability-rest
+    description: REST API for Natixis Psd2 Open Banking Cohort Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: natixis-psd2-open-banking-cohort-capability-mcp
+    description: MCP server exposing Natixis Psd2 Open Banking Cohort Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: natixis-psd2-open-banking-cohort-capability-skills
+    description: Agent Skill bundle for Natixis Psd2 Open Banking Cohort Capability.
+    skills:
+    - name: natixis-psd2-open-banking-cohort-capability
+      description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
+      location: file:///opt/naftiko/skills/natixis-psd2-open-banking-cohort-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
+        from:
+          sourceNamespace: natixis-psd2-open-banking-cohort-capability-mcp
+          action: example

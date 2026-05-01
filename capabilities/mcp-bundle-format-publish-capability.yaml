@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Mcp Bundle Format Publish Capability
+  description: A capability that publishes Naftiko-governed capability set in the November 2025 MCP Bundle Format spec so they can be installed into any compliant agent runtime as a unit.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: mcp-bundle-format-publish-capability-rest
+    description: REST API for Mcp Bundle Format Publish Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: mcp-bundle-format-publish-capability-mcp
+    description: MCP server exposing Mcp Bundle Format Publish Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability that publishes Naftiko-governed capability set in the November 2025 MCP Bundle Format spec so they can be installed into any compliant agent runtime as a unit.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: mcp-bundle-format-publish-capability-skills
+    description: Agent Skill bundle for Mcp Bundle Format Publish Capability.
+    skills:
+    - name: mcp-bundle-format-publish-capability
+      description: A capability that publishes Naftiko-governed capability set in the November 2025 MCP Bundle Format spec so they can be installed into any compliant agent runtime as a unit.
+      location: file:///opt/naftiko/skills/mcp-bundle-format-publish-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that publishes Naftiko-governed capability set in the November 2025 MCP Bundle Format spec so they can be installed into any compliant agent runtime as a unit.
+        from:
+          sourceNamespace: mcp-bundle-format-publish-capability-mcp
+          action: example

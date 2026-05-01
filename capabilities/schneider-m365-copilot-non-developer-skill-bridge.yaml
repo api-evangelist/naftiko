@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Schneider M365 Copilot Non Developer Skill Bridge
+  description: A capability that exposes a curated set of M365 Copilot skills to Schneider's non-developer business side, paralleling the developer GitHub Copilot path.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: schneider-m365-copilot-non-developer-skill-bridge-rest
+    description: REST API for Schneider M365 Copilot Non Developer Skill Bridge.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: schneider-m365-copilot-non-developer-skill-bridge-mcp
+    description: MCP server exposing Schneider M365 Copilot Non Developer Skill Bridge for AI agents.
+    tools:
+    - name: example
+      description: A capability that exposes a curated set of M365 Copilot skills to Schneider's non-developer business side, paralleling the developer GitHub Copilot path.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: schneider-m365-copilot-non-developer-skill-bridge-skills
+    description: Agent Skill bundle for Schneider M365 Copilot Non Developer Skill Bridge.
+    skills:
+    - name: schneider-m365-copilot-non-developer-skill-bridge
+      description: A capability that exposes a curated set of M365 Copilot skills to Schneider's non-developer business side, paralleling the developer GitHub Copilot path.
+      location: file:///opt/naftiko/skills/schneider-m365-copilot-non-developer-skill-bridge
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that exposes a curated set of M365 Copilot skills to Schneider's non-developer business side, paralleling the developer GitHub Copilot path.
+        from:
+          sourceNamespace: schneider-m365-copilot-non-developer-skill-bridge-mcp
+          action: example

@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Developer Portal Public Market Data Mcp
+  description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: developer-portal-public-market-data-mcp-rest
+    description: REST API for Developer Portal Public Market Data Mcp.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: developer-portal-public-market-data-mcp-mcp
+    description: MCP server exposing Developer Portal Public Market Data Mcp for AI agents.
+    tools:
+    - name: example
+      description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: developer-portal-public-market-data-mcp-skills
+    description: Agent Skill bundle for Developer Portal Public Market Data Mcp.
+    skills:
+    - name: developer-portal-public-market-data-mcp
+      description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
+      location: file:///opt/naftiko/skills/developer-portal-public-market-data-mcp
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
+        from:
+          sourceNamespace: developer-portal-public-market-data-mcp-mcp
+          action: example

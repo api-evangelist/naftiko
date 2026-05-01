@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Github Mcp Vs Sdk Side By Side
+  description: A capability that wraps the GitHub REST API as both a generated SDK call path AND a Naftiko-exposed MCP tool over the same operation, used as the visual proof of "Capabilities Are the New Abstraction Layer."
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: github-mcp-vs-sdk-side-by-side-rest
+    description: REST API for Github Mcp Vs Sdk Side By Side.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: github-mcp-vs-sdk-side-by-side-mcp
+    description: MCP server exposing Github Mcp Vs Sdk Side By Side for AI agents.
+    tools:
+    - name: example
+      description: A capability that wraps the GitHub REST API as both a generated SDK call path AND a Naftiko-exposed MCP tool over the same operation, used as the visual proof of "Capabilities Are the New Abstraction Layer."
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: github-mcp-vs-sdk-side-by-side-skills
+    description: Agent Skill bundle for Github Mcp Vs Sdk Side By Side.
+    skills:
+    - name: github-mcp-vs-sdk-side-by-side
+      description: A capability that wraps the GitHub REST API as both a generated SDK call path AND a Naftiko-exposed MCP tool over the same operation, used as the visual proof of "Capabilities Are the New Abstraction Layer."
+      location: file:///opt/naftiko/skills/github-mcp-vs-sdk-side-by-side
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that wraps the GitHub REST API as both a generated SDK call path AND a Naftiko-exposed MCP tool over the same operation, used as the visual proof of "Capabilities Are the New Abstraction Layer."
+        from:
+          sourceNamespace: github-mcp-vs-sdk-side-by-side-mcp
+          action: example

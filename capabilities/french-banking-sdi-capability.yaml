@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: French Banking Sdi Capability
+  description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: french-banking-sdi-capability-rest
+    description: REST API for French Banking Sdi Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: french-banking-sdi-capability-mcp
+    description: MCP server exposing French Banking Sdi Capability for AI agents.
+    tools:
+    - name: example
+      description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: french-banking-sdi-capability-skills
+    description: Agent Skill bundle for French Banking Sdi Capability.
+    skills:
+    - name: french-banking-sdi-capability
+      description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
+      location: file:///opt/naftiko/skills/french-banking-sdi-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
+        from:
+          sourceNamespace: french-banking-sdi-capability-mcp
+          action: example

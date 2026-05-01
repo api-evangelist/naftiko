@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Stealth Differentiator Bridge Capability
+  description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: stealth-differentiator-bridge-capability-rest
+    description: REST API for Stealth Differentiator Bridge Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: stealth-differentiator-bridge-capability-mcp
+    description: MCP server exposing Stealth Differentiator Bridge Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: stealth-differentiator-bridge-capability-skills
+    description: Agent Skill bundle for Stealth Differentiator Bridge Capability.
+    skills:
+    - name: stealth-differentiator-bridge-capability
+      description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
+      location: file:///opt/naftiko/skills/stealth-differentiator-bridge-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
+        from:
+          sourceNamespace: stealth-differentiator-bridge-capability-mcp
+          action: example

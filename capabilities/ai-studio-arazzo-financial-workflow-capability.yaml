@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Ai Studio Arazzo Financial Workflow Capability
+  description: A capability that ingests an Arazzo workflow from AI Studio and exposes the workflow as a single composed MCP tool — the apidays NYC co-branded financial-services artifact.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: ai-studio-arazzo-financial-workflow-capability-rest
+    description: REST API for Ai Studio Arazzo Financial Workflow Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: ai-studio-arazzo-financial-workflow-capability-mcp
+    description: MCP server exposing Ai Studio Arazzo Financial Workflow Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability that ingests an Arazzo workflow from AI Studio and exposes the workflow as a single composed MCP tool — the apidays NYC co-branded financial-services artifact.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: ai-studio-arazzo-financial-workflow-capability-skills
+    description: Agent Skill bundle for Ai Studio Arazzo Financial Workflow Capability.
+    skills:
+    - name: ai-studio-arazzo-financial-workflow-capability
+      description: A capability that ingests an Arazzo workflow from AI Studio and exposes the workflow as a single composed MCP tool — the apidays NYC co-branded financial-services artifact.
+      location: file:///opt/naftiko/skills/ai-studio-arazzo-financial-workflow-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that ingests an Arazzo workflow from AI Studio and exposes the workflow as a single composed MCP tool — the apidays NYC co-branded financial-services artifact.
+        from:
+          sourceNamespace: ai-studio-arazzo-financial-workflow-capability-mcp
+          action: example

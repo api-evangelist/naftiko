@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Stripe Openapi Context Compressor
+  description: A capability that ingests the full Stripe OpenAPI and exposes a per-task compressed slice as MCP — the Kate-quotable artifact behind "feed Stripe's OpenAPI to Claude and reduce the context window."
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: stripe-openapi-context-compressor-rest
+    description: REST API for Stripe Openapi Context Compressor.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: stripe-openapi-context-compressor-mcp
+    description: MCP server exposing Stripe Openapi Context Compressor for AI agents.
+    tools:
+    - name: example
+      description: A capability that ingests the full Stripe OpenAPI and exposes a per-task compressed slice as MCP — the Kate-quotable artifact behind "feed Stripe's OpenAPI to Claude and reduce the context window."
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: stripe-openapi-context-compressor-skills
+    description: Agent Skill bundle for Stripe Openapi Context Compressor.
+    skills:
+    - name: stripe-openapi-context-compressor
+      description: A capability that ingests the full Stripe OpenAPI and exposes a per-task compressed slice as MCP — the Kate-quotable artifact behind "feed Stripe's OpenAPI to Claude and reduce the context window."
+      location: file:///opt/naftiko/skills/stripe-openapi-context-compressor
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that ingests the full Stripe OpenAPI and exposes a per-task compressed slice as MCP — the Kate-quotable artifact behind "feed Stripe's OpenAPI to Claude and reduce the context window."
+        from:
+          sourceNamespace: stripe-openapi-context-compressor-mcp
+          action: example

@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: M365 Dynamics 365 Copilot Extension Capability
+  description: A capability that wraps a Dynamics 365 (Sales/Service) endpoint as both an ISV-style M365 Copilot extension AND an MCP tool, demonstrating Sébastien's "two developer paths" pattern (line-of-business AND ISV).
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: m365-dynamics-365-copilot-extension-capability-rest
+    description: REST API for M365 Dynamics 365 Copilot Extension Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: m365-dynamics-365-copilot-extension-capability-mcp
+    description: MCP server exposing M365 Dynamics 365 Copilot Extension Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability that wraps a Dynamics 365 (Sales/Service) endpoint as both an ISV-style M365 Copilot extension AND an MCP tool, demonstrating Sébastien's "two developer paths" pattern (line-of-business AND ISV).
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: m365-dynamics-365-copilot-extension-capability-skills
+    description: Agent Skill bundle for M365 Dynamics 365 Copilot Extension Capability.
+    skills:
+    - name: m365-dynamics-365-copilot-extension-capability
+      description: A capability that wraps a Dynamics 365 (Sales/Service) endpoint as both an ISV-style M365 Copilot extension AND an MCP tool, demonstrating Sébastien's "two developer paths" pattern (line-of-business AND ISV).
+      location: file:///opt/naftiko/skills/m365-dynamics-365-copilot-extension-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that wraps a Dynamics 365 (Sales/Service) endpoint as both an ISV-style M365 Copilot extension AND an MCP tool, demonstrating Sébastien's "two developer paths" pattern (line-of-business AND ISV).
+        from:
+          sourceNamespace: m365-dynamics-365-copilot-extension-capability-mcp
+          action: example

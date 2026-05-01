@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Public Aviation Capability
+  description: A small capability demo wrapping a public or aviation-adjacent API — bring something concrete to the next outreach.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: public-aviation-capability-rest
+    description: REST API for Public Aviation Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: public-aviation-capability-mcp
+    description: MCP server exposing Public Aviation Capability for AI agents.
+    tools:
+    - name: example
+      description: A small capability demo wrapping a public or aviation-adjacent API — bring something concrete to the next outreach.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: public-aviation-capability-skills
+    description: Agent Skill bundle for Public Aviation Capability.
+    skills:
+    - name: public-aviation-capability
+      description: A small capability demo wrapping a public or aviation-adjacent API — bring something concrete to the next outreach.
+      location: file:///opt/naftiko/skills/public-aviation-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A small capability demo wrapping a public or aviation-adjacent API — bring something concrete to the next outreach.
+        from:
+          sourceNamespace: public-aviation-capability-mcp
+          action: example

@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Sms Verify Mcp Collection
+  description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: sms-verify-mcp-collection-rest
+    description: REST API for Sms Verify Mcp Collection.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: sms-verify-mcp-collection-mcp
+    description: MCP server exposing Sms Verify Mcp Collection for AI agents.
+    tools:
+    - name: example
+      description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: sms-verify-mcp-collection-skills
+    description: Agent Skill bundle for Sms Verify Mcp Collection.
+    skills:
+    - name: sms-verify-mcp-collection
+      description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
+      location: file:///opt/naftiko/skills/sms-verify-mcp-collection
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
+        from:
+          sourceNamespace: sms-verify-mcp-collection-mcp
+          action: example

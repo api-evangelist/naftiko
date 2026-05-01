@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Vehicle Telemetry Mcp
+  description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: vehicle-telemetry-mcp-rest
+    description: REST API for Vehicle Telemetry Mcp.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: vehicle-telemetry-mcp-mcp
+    description: MCP server exposing Vehicle Telemetry Mcp for AI agents.
+    tools:
+    - name: example
+      description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: vehicle-telemetry-mcp-skills
+    description: Agent Skill bundle for Vehicle Telemetry Mcp.
+    skills:
+    - name: vehicle-telemetry-mcp
+      description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
+      location: file:///opt/naftiko/skills/vehicle-telemetry-mcp
+      allowed-tools: example
+      tools:
+      - name: example
+        description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
+        from:
+          sourceNamespace: vehicle-telemetry-mcp-mcp
+          action: example

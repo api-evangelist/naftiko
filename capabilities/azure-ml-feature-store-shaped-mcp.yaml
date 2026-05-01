@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Azure Ml Feature Store Shaped Mcp
+  description: A capability over Azure Machine Learning feature store endpoints that returns typed, shaped feature payloads for an AI/ML pipeline agent.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: azure-ml-feature-store-shaped-mcp-rest
+    description: REST API for Azure Ml Feature Store Shaped Mcp.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: azure-ml-feature-store-shaped-mcp-mcp
+    description: MCP server exposing Azure Ml Feature Store Shaped Mcp for AI agents.
+    tools:
+    - name: example
+      description: A capability over Azure Machine Learning feature store endpoints that returns typed, shaped feature payloads for an AI/ML pipeline agent.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: azure-ml-feature-store-shaped-mcp-skills
+    description: Agent Skill bundle for Azure Ml Feature Store Shaped Mcp.
+    skills:
+    - name: azure-ml-feature-store-shaped-mcp
+      description: A capability over Azure Machine Learning feature store endpoints that returns typed, shaped feature payloads for an AI/ML pipeline agent.
+      location: file:///opt/naftiko/skills/azure-ml-feature-store-shaped-mcp
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability over Azure Machine Learning feature store endpoints that returns typed, shaped feature payloads for an AI/ML pipeline agent.
+        from:
+          sourceNamespace: azure-ml-feature-store-shaped-mcp-mcp
+          action: example

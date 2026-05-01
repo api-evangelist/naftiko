@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: M365 Rightsize Copilot Context Capability
+  description: 'Implements Guide-Use-Cases #2 (Rightsize AI context) against a verbose Graph endpoint, used as the basis for the follow-on stories and shorts.'
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: m365-rightsize-copilot-context-capability-rest
+    description: REST API for M365 Rightsize Copilot Context Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: m365-rightsize-copilot-context-capability-mcp
+    description: MCP server exposing M365 Rightsize Copilot Context Capability for AI agents.
+    tools:
+    - name: example
+      description: 'Implements Guide-Use-Cases #2 (Rightsize AI context) against a verbose Graph endpoint, used as the basis for the follow-on stories and shorts.'
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: m365-rightsize-copilot-context-capability-skills
+    description: Agent Skill bundle for M365 Rightsize Copilot Context Capability.
+    skills:
+    - name: m365-rightsize-copilot-context-capability
+      description: 'Implements Guide-Use-Cases #2 (Rightsize AI context) against a verbose Graph endpoint, used as the basis for the follow-on stories and shorts.'
+      location: file:///opt/naftiko/skills/m365-rightsize-copilot-context-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: 'Implements Guide-Use-Cases #2 (Rightsize AI context) against a verbose Graph endpoint, used as the basis for the follow-on stories and shorts.'
+        from:
+          sourceNamespace: m365-rightsize-copilot-context-capability-mcp
+          action: example

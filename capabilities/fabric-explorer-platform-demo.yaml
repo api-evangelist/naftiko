@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Fabric Explorer Platform Demo
+  description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: fabric-explorer-platform-demo-rest
+    description: REST API for Fabric Explorer Platform Demo.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: fabric-explorer-platform-demo-mcp
+    description: MCP server exposing Fabric Explorer Platform Demo for AI agents.
+    tools:
+    - name: example
+      description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: fabric-explorer-platform-demo-skills
+    description: Agent Skill bundle for Fabric Explorer Platform Demo.
+    skills:
+    - name: fabric-explorer-platform-demo
+      description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
+      location: file:///opt/naftiko/skills/fabric-explorer-platform-demo
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
+        from:
+          sourceNamespace: fabric-explorer-platform-demo-mcp
+          action: example

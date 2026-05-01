@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Api As Digital Product Collection
+  description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: api-as-digital-product-collection-rest
+    description: REST API for Api As Digital Product Collection.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: api-as-digital-product-collection-mcp
+    description: MCP server exposing Api As Digital Product Collection for AI agents.
+    tools:
+    - name: example
+      description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: api-as-digital-product-collection-skills
+    description: Agent Skill bundle for Api As Digital Product Collection.
+    skills:
+    - name: api-as-digital-product-collection
+      description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
+      location: file:///opt/naftiko/skills/api-as-digital-product-collection
+      allowed-tools: example
+      tools:
+      - name: example
+        description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
+        from:
+          sourceNamespace: api-as-digital-product-collection-mcp
+          action: example

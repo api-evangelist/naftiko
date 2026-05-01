@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Emsx Execution Governed Capability
+  description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: emsx-execution-governed-capability-rest
+    description: REST API for Emsx Execution Governed Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: emsx-execution-governed-capability-mcp
+    description: MCP server exposing Emsx Execution Governed Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: emsx-execution-governed-capability-skills
+    description: Agent Skill bundle for Emsx Execution Governed Capability.
+    skills:
+    - name: emsx-execution-governed-capability
+      description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
+      location: file:///opt/naftiko/skills/emsx-execution-governed-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
+        from:
+          sourceNamespace: emsx-execution-governed-capability-mcp
+          action: example

@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Spectral Rule Pack Runner
+  description: A capability that runs the Naftiko Spectral rule pack against a target OpenAPI doc and returns lint findings shaped for an agent.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: spectral-rule-pack-runner-rest
+    description: REST API for Spectral Rule Pack Runner.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: spectral-rule-pack-runner-mcp
+    description: MCP server exposing Spectral Rule Pack Runner for AI agents.
+    tools:
+    - name: example
+      description: A capability that runs the Naftiko Spectral rule pack against a target OpenAPI doc and returns lint findings shaped for an agent.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: spectral-rule-pack-runner-skills
+    description: Agent Skill bundle for Spectral Rule Pack Runner.
+    skills:
+    - name: spectral-rule-pack-runner
+      description: A capability that runs the Naftiko Spectral rule pack against a target OpenAPI doc and returns lint findings shaped for an agent.
+      location: file:///opt/naftiko/skills/spectral-rule-pack-runner
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that runs the Naftiko Spectral rule pack against a target OpenAPI doc and returns lint findings shaped for an agent.
+        from:
+          sourceNamespace: spectral-rule-pack-runner-mcp
+          action: example

@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Data Api Capability
+  description: A capability layered on top of the Data API showing typed outputParameters + tags-on-Consumes (data sensitivity, billing granularity) as the -customer-facing pattern.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: data-api-capability-rest
+    description: REST API for Data Api Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: data-api-capability-mcp
+    description: MCP server exposing Data Api Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability layered on top of the Data API showing typed outputParameters + tags-on-Consumes (data sensitivity, billing granularity) as the -customer-facing pattern.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: data-api-capability-skills
+    description: Agent Skill bundle for Data Api Capability.
+    skills:
+    - name: data-api-capability
+      description: A capability layered on top of the Data API showing typed outputParameters + tags-on-Consumes (data sensitivity, billing granularity) as the -customer-facing pattern.
+      location: file:///opt/naftiko/skills/data-api-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability layered on top of the Data API showing typed outputParameters + tags-on-Consumes (data sensitivity, billing granularity) as the -customer-facing pattern.
+        from:
+          sourceNamespace: data-api-capability-mcp
+          action: example

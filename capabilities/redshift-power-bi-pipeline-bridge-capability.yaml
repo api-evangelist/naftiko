@@ -1,0 +1,67 @@
+naftiko: 1.0.0-alpha2
+info:
+  title: Redshift Power Bi Pipeline Bridge Capability
+  description: A capability that bridges Amazon Redshift queries to a Power BI dataset refresh, exposing the data-pipeline path as MCP + REST — directly addressing signaled api/eventDriven/dataPipelines gap.
+  tags:
+  - Naftiko
+  created: '2026-05-01'
+  modified: '2026-05-01'
+binds:
+- namespace: naftiko-env
+  description: Naftiko credentials.
+  keys:
+    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+capability:
+  consumes:
+  - namespace: naftiko
+    type: http
+    baseUri: https://api.naftiko.com
+    authentication:
+      type: bearer
+      token: '{{NAFTIKO_API_KEY}}'
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - name: example-op
+        method: GET
+  exposes:
+  - type: rest
+    address: 0.0.0.0
+    port: 8080
+    namespace: redshift-power-bi-pipeline-bridge-capability-rest
+    description: REST API for Redshift Power Bi Pipeline Bridge Capability.
+    resources:
+    - name: example
+      path: /example
+      operations:
+      - method: GET
+        name: example-op
+        call: naftiko.example-op
+  - type: mcp
+    address: 0.0.0.0
+    port: 3010
+    namespace: redshift-power-bi-pipeline-bridge-capability-mcp
+    description: MCP server exposing Redshift Power Bi Pipeline Bridge Capability for AI agents.
+    tools:
+    - name: example
+      description: A capability that bridges Amazon Redshift queries to a Power BI dataset refresh, exposing the data-pipeline path as MCP + REST — directly addressing signaled api/eventDriven/dataPipelines gap.
+      hints:
+        readOnly: true
+      call: naftiko.example-op
+  - type: skill
+    address: 0.0.0.0
+    port: 3011
+    namespace: redshift-power-bi-pipeline-bridge-capability-skills
+    description: Agent Skill bundle for Redshift Power Bi Pipeline Bridge Capability.
+    skills:
+    - name: redshift-power-bi-pipeline-bridge-capability
+      description: A capability that bridges Amazon Redshift queries to a Power BI dataset refresh, exposing the data-pipeline path as MCP + REST — directly addressing signaled api/eventDriven/dataPipelines gap.
+      location: file:///opt/naftiko/skills/redshift-power-bi-pipeline-bridge-capability
+      allowed-tools: example
+      tools:
+      - name: example
+        description: A capability that bridges Amazon Redshift queries to a Power BI dataset refresh, exposing the data-pipeline path as MCP + REST — directly addressing signaled api/eventDriven/dataPipelines gap.
+        from:
+          sourceNamespace: redshift-power-bi-pipeline-bridge-capability-mcp
+          action: example
