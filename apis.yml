@@ -5,7 +5,7 @@ type: Index
 image: https://kinlane-productions2.s3.amazonaws.com/apis-json/apis-json-logo.jpg
 url: https://raw.githubusercontent.com/api-evangelist/naftiko/refs/heads/main/apis.yml
 created: '2026-05-01'
-modified: '2026-05-01'
+modified: '2026-04-28'
 specificationVersion: '0.19'
 tags:
   - AI

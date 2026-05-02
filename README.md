@@ -12,7 +12,7 @@ Naftiko provides spec-driven integration tooling that turns existing data and AP
 ## Timestamps
 
 - **Created:** 2026-05-01
-- **Modified:** 2026-05-01
+- **Modified:** 2026-04-28
 
 ## APIs
 
