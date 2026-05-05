@@ -1,67 +1,71 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Amadeus Flight Status Rightsize Capability
-  description: 'A capability over Amadeus / FlightAware-style flight-status APIs implementing Use Case #2 (Rightsize AI context) for an airline-IT API-sprawl scenario.'
-  tags:
-  - Naftiko
+  description: A capability over Amadeus / FlightAware-style flight-status APIs implementing Use Case #2 (Rightsize AI context) for an airline-IT API-sprawl scenario.
+  tags: [Naftiko, Amadeus, FlightAware, Rightsize]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: amadeus-env
+  description: Amadeus Self-Service API OAuth bearer.
+  keys: {AMADEUS_TOKEN: AMADEUS_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: amadeus
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.amadeus.com
+    authentication: {type: bearer, token: '{{AMADEUS_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: flight-status
+      path: /v2/schedule/flights
       operations:
-      - name: example-op
+      - name: get-flight-status
         method: GET
+        inputParameters:
+        - {name: carrierCode, in: query, description: IATA carrier code.}
+        - {name: flightNumber, in: query}
+        - {name: scheduledDepartureDate, in: query}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: amadeus-flight-status-rightsize-capability-rest
-    description: REST API for Amadeus Flight Status Rightsize Capability.
+    description: Right-sized flight-status endpoint that returns only the fields an AI agent needs.
     resources:
-    - name: example
-      path: /example
+    - name: flight-status
+      path: /flights/{{carrier}}/{{number}}/{{date}}
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: get-flight-status-rightsized
+        description: Return a compact subset of Amadeus flight-status data tuned for AI context (gate, terminal, status, deltas only).
+        inputParameters:
+        - {name: carrier, in: path, type: string}
+        - {name: number, in: path, type: string}
+        - {name: date, in: path, type: string, description: 'YYYY-MM-DD'}
+        call: amadeus.get-flight-status
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: amadeus-flight-status-rightsize-capability-mcp
-    description: MCP server exposing Amadeus Flight Status Rightsize Capability for AI agents.
+    description: MCP server exposing right-sized flight status for agents.
     tools:
-    - name: example
-      description: 'A capability over Amadeus / FlightAware-style flight-status APIs implementing Use Case #2 (Rightsize AI context) for an airline-IT API-sprawl scenario.'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-flight-status-rightsized
+      description: Compact flight-status payload for AI context.
+      hints: {readOnly: true}
+      inputParameters:
+      - {name: carrier, type: string, required: true}
+      - {name: number, type: string, required: true}
+      - {name: date, type: string, required: true}
+      call: amadeus.get-flight-status
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: amadeus-flight-status-rightsize-capability-skills
-    description: Agent Skill bundle for Amadeus Flight Status Rightsize Capability.
+    description: Skill bundle for right-sized flight status.
     skills:
     - name: amadeus-flight-status-rightsize-capability
-      description: 'A capability over Amadeus / FlightAware-style flight-status APIs implementing Use Case #2 (Rightsize AI context) for an airline-IT API-sprawl scenario.'
+      description: Compact flight-status responses for AI agents.
       location: file:///opt/naftiko/skills/amadeus-flight-status-rightsize-capability
-      allowed-tools: example
+      allowed-tools: get-flight-status-rightsized
       tools:
-      - name: example
-        description: 'A capability over Amadeus / FlightAware-style flight-status APIs implementing Use Case #2 (Rightsize AI context) for an airline-IT API-sprawl scenario.'
-        from:
-          sourceNamespace: amadeus-flight-status-rightsize-capability-mcp
-          action: example
+      - {name: get-flight-status-rightsized, from: {sourceNamespace: amadeus-flight-status-rightsize-capability-mcp, action: get-flight-status-rightsized}}

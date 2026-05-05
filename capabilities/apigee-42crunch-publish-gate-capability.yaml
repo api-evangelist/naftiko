@@ -4,64 +4,181 @@ info:
   description: A capability that wires the Apigee + 42 Crunch publish pipeline into the Naftiko capability publish flow, so capability YAMLs cannot reach production without passing both gates and emit a per-publish audit record back to API governance layer.
   tags:
   - Naftiko
+  - Apigee
+  - 42Crunch
+  - Governance
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
+- namespace: fortytwocrunch-env
+  description: 42Crunch platform API token with audit and conformance scopes.
   keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+    FORTYTWOCRUNCH_TOKEN: FORTYTWOCRUNCH_TOKEN
+- namespace: apigee-env
+  description: Google Apigee credentials and target organization/environment.
+  keys:
+    APIGEE_TOKEN: APIGEE_TOKEN
+    APIGEE_ORG: APIGEE_ORG
+    APIGEE_ENV: APIGEE_ENV
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: fortytwocrunch
     type: http
-    baseUri: https://api.naftiko.com
+    baseUri: https://platform.42crunch.com
     authentication:
       type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+      token: '{{FORTYTWOCRUNCH_TOKEN}}'
     resources:
-    - name: example
-      path: /example
+    - name: api-audit
+      path: /api/v2/apis/{{api_id}}/assessmentreport
       operations:
-      - name: example-op
+      - name: get-audit-report
         method: GET
+        inputParameters:
+        - name: api_id
+          in: path
+          description: 42Crunch API UUID.
+    - name: api-conformance
+      path: /api/v2/apis/{{api_id}}/scanreport
+      operations:
+      - name: get-conformance-report
+        method: GET
+        inputParameters:
+        - name: api_id
+          in: path
+    - name: apis
+      path: /api/v2/apis
+      operations:
+      - name: import-api
+        method: POST
+        description: Upload an OpenAPI spec to 42Crunch which triggers an automatic security audit.
+  - namespace: apigee
+    type: http
+    baseUri: https://apigee.googleapis.com
+    authentication:
+      type: bearer
+      token: '{{APIGEE_TOKEN}}'
+    resources:
+    - name: api-proxies
+      path: /v1/organizations/{{APIGEE_ORG}}/apis
+      operations:
+      - name: list-api-proxies
+        method: GET
+      - name: import-api-proxy
+        method: POST
+        description: Upload an API proxy bundle. Use action=import&name=<proxy-name>.
+        inputParameters:
+        - name: action
+          in: query
+        - name: name
+          in: query
+    - name: deployments
+      path: /v1/organizations/{{APIGEE_ORG}}/environments/{{APIGEE_ENV}}/apis/{{api_name}}/revisions/{{revision}}/deployments
+      operations:
+      - name: deploy-api-revision
+        method: POST
+        inputParameters:
+        - name: api_name
+          in: path
+        - name: revision
+          in: path
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: apigee-42crunch-publish-gate-capability-rest
-    description: REST API for Apigee 42crunch Publish Gate Capability.
+    description: REST API that runs the dual 42Crunch + Apigee publish gate and returns a unified audit record.
     resources:
-    - name: example
-      path: /example
+    - name: publish
+      path: /publish/{{capability_id}}
+      operations:
+      - method: POST
+        name: publish-with-gates
+        description: Run the 42Crunch security audit and the Apigee deployment, returning pass/fail plus the audit record. Blocks if either gate fails.
+        inputParameters:
+        - name: capability_id
+          in: path
+          type: string
+          description: Capability identifier whose underlying OpenAPI spec is being published.
+        call: fortytwocrunch.import-api
+    - name: audit-record
+      path: /audit-record/{{capability_id}}
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: get-audit-record
+        description: Retrieve the most recent dual-gate audit record for a capability.
+        inputParameters:
+        - name: capability_id
+          in: path
+          type: string
+        call: fortytwocrunch.get-audit-report
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: apigee-42crunch-publish-gate-capability-mcp
-    description: MCP server exposing Apigee 42crunch Publish Gate Capability for AI agents.
+    description: MCP server letting governance agents run and query the dual publish gate.
     tools:
-    - name: example
-      description: A capability that wires the Apigee + 42 Crunch publish pipeline into the Naftiko capability publish flow, so capability YAMLs cannot reach production without passing both gates and emit a per-publish audit record back to API governance layer.
+    - name: publish-with-gates
+      description: Submit a capability for publishing through 42Crunch (security audit) and Apigee (deployment). Returns pass/fail and the per-publish audit record.
+      hints:
+        readOnly: false
+      inputParameters:
+      - name: capability_id
+        type: string
+        required: true
+      call: fortytwocrunch.import-api
+    - name: get-audit-record
+      description: Fetch the dual-gate audit record (42Crunch audit score + conformance, Apigee deployment status) for a capability.
       hints:
         readOnly: true
-      call: naftiko.example-op
+      inputParameters:
+      - name: capability_id
+        type: string
+        required: true
+      call: fortytwocrunch.get-audit-report
+    - name: get-42crunch-audit
+      description: Fetch the latest 42Crunch security audit report for a registered API.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: api_id
+        type: string
+        required: true
+      call: fortytwocrunch.get-audit-report
+    - name: list-apigee-proxies
+      description: List API proxies in the configured Apigee organization.
+      hints:
+        readOnly: true
+      call: apigee.list-api-proxies
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: apigee-42crunch-publish-gate-capability-skills
-    description: Agent Skill bundle for Apigee 42crunch Publish Gate Capability.
+    description: Agent Skill bundle for governance agents enforcing the dual publish gate.
     skills:
     - name: apigee-42crunch-publish-gate-capability
-      description: A capability that wires the Apigee + 42 Crunch publish pipeline into the Naftiko capability publish flow, so capability YAMLs cannot reach production without passing both gates and emit a per-publish audit record back to API governance layer.
+      description: Block capability publishing unless 42Crunch audit and Apigee deployment both succeed; emit an audit record.
       location: file:///opt/naftiko/skills/apigee-42crunch-publish-gate-capability
-      allowed-tools: example
+      allowed-tools: publish-with-gates,get-audit-record,get-42crunch-audit,list-apigee-proxies
+      argument-hint: 'Use when promoting a capability to production through Apigee with mandatory 42Crunch security audit.'
       tools:
-      - name: example
-        description: A capability that wires the Apigee + 42 Crunch publish pipeline into the Naftiko capability publish flow, so capability YAMLs cannot reach production without passing both gates and emit a per-publish audit record back to API governance layer.
+      - name: publish-with-gates
+        description: Run both gates and publish, or block.
         from:
           sourceNamespace: apigee-42crunch-publish-gate-capability-mcp
-          action: example
+          action: publish-with-gates
+      - name: get-audit-record
+        description: Retrieve a per-publish dual-gate audit record.
+        from:
+          sourceNamespace: apigee-42crunch-publish-gate-capability-mcp
+          action: get-audit-record
+      - name: get-42crunch-audit
+        description: Get the 42Crunch security audit report.
+        from:
+          sourceNamespace: apigee-42crunch-publish-gate-capability-mcp
+          action: get-42crunch-audit
+      - name: list-apigee-proxies
+        description: List Apigee proxies.
+        from:
+          sourceNamespace: apigee-42crunch-publish-gate-capability-mcp
+          action: list-apigee-proxies

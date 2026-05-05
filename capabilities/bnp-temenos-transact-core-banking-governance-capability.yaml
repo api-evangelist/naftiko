@@ -1,67 +1,67 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Bnp Temenos Transact Core Banking Governance Capability
-  description: A capability over Temenos Transact (the core banking system) with full governance ruleset + ArgoCD GitOps reconciliation, framed for BNP's regulatory-compliance language.
-  tags:
-  - Naftiko
+  description: A governance capability over Temenos Transact core banking — every account/transaction call passes through Naftiko governance and emits an audit event.
+  tags: [Naftiko, BNP, Temenos, Core Banking]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: temenos-env
+  keys: {TEMENOS_HOST: TEMENOS_HOST, TEMENOS_TOKEN: TEMENOS_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: temenos
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{TEMENOS_HOST}}
+    authentication: {type: bearer, token: '{{TEMENOS_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: account
+      path: /irf-provider-container/api/v1.0.0/holdings/accounts/{{account_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-account, method: GET, inputParameters: [{name: account_id, in: path}]}
+    - name: account-balance
+      path: /irf-provider-container/api/v1.0.0/holdings/accounts/{{account_id}}/balances
+      operations:
+      - {name: get-account-balance, method: GET, inputParameters: [{name: account_id, in: path}]}
+    - name: transactions
+      path: /irf-provider-container/api/v1.0.0/holdings/accounts/{{account_id}}/transactions
+      operations:
+      - {name: list-transactions, method: GET, inputParameters: [{name: account_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: bnp-temenos-transact-core-banking-governance-capability-rest
-    description: REST API for Bnp Temenos Transact Core Banking Governance Capability.
+    description: Governance-gated Temenos surface.
     resources:
-    - name: example
-      path: /example
+    - name: account
+      path: /accounts/{{account_id}}
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: get-governed-account, inputParameters: [{name: account_id, in: path, type: string}], call: temenos.get-account}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: bnp-temenos-transact-core-banking-governance-capability-mcp
-    description: MCP server exposing Bnp Temenos Transact Core Banking Governance Capability for AI agents.
+    description: MCP for governed Temenos ops.
     tools:
-    - name: example
-      description: A capability over Temenos Transact (the core banking system) with full governance ruleset + ArgoCD GitOps reconciliation, framed for BNP's regulatory-compliance language.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-account
+      hints: {readOnly: true}
+      inputParameters: [{name: account_id, type: string, required: true}]
+      call: temenos.get-account
+    - name: list-transactions
+      hints: {readOnly: true}
+      inputParameters: [{name: account_id, type: string, required: true}]
+      call: temenos.list-transactions
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: bnp-temenos-transact-core-banking-governance-capability-skills
-    description: Agent Skill bundle for Bnp Temenos Transact Core Banking Governance Capability.
+    description: Skill for governed Temenos.
     skills:
     - name: bnp-temenos-transact-core-banking-governance-capability
-      description: A capability over Temenos Transact (the core banking system) with full governance ruleset + ArgoCD GitOps reconciliation, framed for BNP's regulatory-compliance language.
+      description: Governed Temenos Transact access.
       location: file:///opt/naftiko/skills/bnp-temenos-transact-core-banking-governance-capability
-      allowed-tools: example
+      allowed-tools: get-account,list-transactions
       tools:
-      - name: example
-        description: A capability over Temenos Transact (the core banking system) with full governance ruleset + ArgoCD GitOps reconciliation, framed for BNP's regulatory-compliance language.
-        from:
-          sourceNamespace: bnp-temenos-transact-core-banking-governance-capability-mcp
-          action: example
+      - {name: get-account, from: {sourceNamespace: bnp-temenos-transact-core-banking-governance-capability-mcp, action: get-account}}
+      - {name: list-transactions, from: {sourceNamespace: bnp-temenos-transact-core-banking-governance-capability-mcp, action: list-transactions}}

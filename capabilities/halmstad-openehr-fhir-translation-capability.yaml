@@ -1,67 +1,67 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Halmstad Openehr Fhir Translation Capability
-  description: A capability that consumes legacy EHR records (HL7v2 / X12) and exposes an openEHR-conformant + FHIR-conformant output, with PII detection + HTTPS gates wired in.
-  tags:
-  - Naftiko
+  description: A capability translating between openEHR archetypes and FHIR resources for the Halmstad health-data project, exposing both surfaces from one capability.
+  tags: [Naftiko, openEHR, FHIR, Translation]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: openehr-env
+  keys: {OPENEHR_HOST: OPENEHR_HOST, OPENEHR_TOKEN: OPENEHR_TOKEN}
+- namespace: fhir-env
+  keys: {FHIR_HOST: FHIR_HOST, FHIR_TOKEN: FHIR_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: openehr
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{OPENEHR_HOST}}
+    authentication: {type: bearer, token: '{{OPENEHR_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: composition
+      path: /rest/v1/composition/{{composition_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-openehr-composition, method: GET, inputParameters: [{name: composition_id, in: path}]}
+  - namespace: fhir
+    type: http
+    baseUri: https://{{FHIR_HOST}}
+    authentication: {type: bearer, token: '{{FHIR_TOKEN}}'}
+    resources:
+    - name: observation
+      path: /Observation/{{id}}
+      operations:
+      - {name: get-fhir-observation, method: GET, inputParameters: [{name: id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: halmstad-openehr-fhir-translation-capability-rest
-    description: REST API for Halmstad Openehr Fhir Translation Capability.
+    description: REST surface for openEHR↔FHIR translation.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: translate, path: /translate/openehr-to-fhir/{{composition_id}}, operations: [{method: GET, name: translate-openehr-to-fhir, inputParameters: [{name: composition_id, in: path, type: string}], call: openehr.get-openehr-composition}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: halmstad-openehr-fhir-translation-capability-mcp
-    description: MCP server exposing Halmstad Openehr Fhir Translation Capability for AI agents.
+    description: MCP for openEHR↔FHIR translation.
     tools:
-    - name: example
-      description: A capability that consumes legacy EHR records (HL7v2 / X12) and exposes an openEHR-conformant + FHIR-conformant output, with PII detection + HTTPS gates wired in.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: translate-openehr-to-fhir
+      hints: {readOnly: true}
+      inputParameters: [{name: composition_id, type: string, required: true}]
+      call: openehr.get-openehr-composition
+    - name: get-fhir-observation
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: fhir.get-fhir-observation
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: halmstad-openehr-fhir-translation-capability-skills
-    description: Agent Skill bundle for Halmstad Openehr Fhir Translation Capability.
+    description: Skill for openEHR↔FHIR translation.
     skills:
     - name: halmstad-openehr-fhir-translation-capability
-      description: A capability that consumes legacy EHR records (HL7v2 / X12) and exposes an openEHR-conformant + FHIR-conformant output, with PII detection + HTTPS gates wired in.
+      description: openEHR↔FHIR translation.
       location: file:///opt/naftiko/skills/halmstad-openehr-fhir-translation-capability
-      allowed-tools: example
+      allowed-tools: translate-openehr-to-fhir,get-fhir-observation
       tools:
-      - name: example
-        description: A capability that consumes legacy EHR records (HL7v2 / X12) and exposes an openEHR-conformant + FHIR-conformant output, with PII detection + HTTPS gates wired in.
-        from:
-          sourceNamespace: halmstad-openehr-fhir-translation-capability-mcp
-          action: example
+      - {name: translate-openehr-to-fhir, from: {sourceNamespace: halmstad-openehr-fhir-translation-capability-mcp, action: translate-openehr-to-fhir}}
+      - {name: get-fhir-observation, from: {sourceNamespace: halmstad-openehr-fhir-translation-capability-mcp, action: get-fhir-observation}}

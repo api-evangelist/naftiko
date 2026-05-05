@@ -1,67 +1,61 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Api First As Governance Surface Capability
-  description: A capability annotated against the SDI "specification as governance surface" framing as the API-First Program reading.
-  tags:
-  - Naftiko
+  description: A capability turning the API-first design surface into a governance touchpoint — every spec change runs through capability-level rules and emits a governance record.
+  tags: [Naftiko, API-First, Governance]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
+- namespace: spectral-env
+  keys: {SPECTRAL_TOKEN: SPECTRAL_TOKEN}
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: spectral
+    type: http
+    baseUri: https://api.stoplight.io
+    authentication: {type: bearer, token: '{{SPECTRAL_TOKEN}}'}
+    resources:
+    - {name: lint, path: /v1/projects/{{project_id}}/lint, operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - name: governance-records
+      path: /v1/governance/records
+      operations: [{name: create-governance-record, method: POST}]
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: api-first-as-governance-surface-capability-rest
-    description: REST API for Api First As Governance Surface Capability.
+    description: REST surface running governance against an OpenAPI spec change.
     resources:
-    - name: example
-      path: /example
+    - name: gate
+      path: /governance/gate
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - method: POST
+        name: run-governance-gate
+        description: Lint a spec, evaluate capability-level rules, emit a governance record.
+        call: spectral.lint-spec
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: api-first-as-governance-surface-capability-mcp
-    description: MCP server exposing Api First As Governance Surface Capability for AI agents.
+    description: MCP for governance gating during API-first design.
     tools:
-    - name: example
-      description: A capability annotated against the SDI "specification as governance surface" framing as the API-First Program reading.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: run-governance-gate, description: Run governance gate on a spec change., call: spectral.lint-spec}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: api-first-as-governance-surface-capability-skills
-    description: Agent Skill bundle for Api First As Governance Surface Capability.
+    description: Skill for governance gating.
     skills:
     - name: api-first-as-governance-surface-capability
-      description: A capability annotated against the SDI "specification as governance surface" framing as the API-First Program reading.
+      description: Governance gate for API-first design.
       location: file:///opt/naftiko/skills/api-first-as-governance-surface-capability
-      allowed-tools: example
+      allowed-tools: run-governance-gate
       tools:
-      - name: example
-        description: A capability annotated against the SDI "specification as governance surface" framing as the API-First Program reading.
-        from:
-          sourceNamespace: api-first-as-governance-surface-capability-mcp
-          action: example
+      - {name: run-governance-gate, from: {sourceNamespace: api-first-as-governance-surface-capability-mcp, action: run-governance-gate}}

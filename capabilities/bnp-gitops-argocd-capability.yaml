@@ -1,67 +1,56 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Bnp Gitops Argocd Capability
-  description: A capability deployed via GitOps (ArgoCD/Flux) with the NaftikoCapability CRD, framed for BNP's ArgoCD + regulatory-compliance language.
-  tags:
-  - Naftiko
+  description: A capability that drives BNP Paribas capability deployments through Argo CD GitOps with sync/rollback exposed as governance-tracked actions.
+  tags: [Naftiko, BNP Paribas, GitOps, Argo CD]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: argocd-env
+  keys: {ARGOCD_HOST: ARGOCD_HOST, ARGOCD_TOKEN: ARGOCD_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: argocd
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{ARGOCD_HOST}}
+    authentication: {type: bearer, token: '{{ARGOCD_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: applications, path: /api/v1/applications, operations: [{name: list-applications, method: GET}]}
+    - name: app-sync
+      path: /api/v1/applications/{{name}}/sync
       operations:
-      - name: example-op
-        method: GET
+      - {name: sync-application, method: POST, inputParameters: [{name: name, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: bnp-gitops-argocd-capability-rest
-    description: REST API for Bnp Gitops Argocd Capability.
+    description: REST surface for BNP GitOps deploys.
     resources:
-    - name: example
-      path: /example
+    - name: sync
+      path: /apps/{{name}}/sync
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: POST, name: sync-app, inputParameters: [{name: name, in: path, type: string}], call: argocd.sync-application}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: bnp-gitops-argocd-capability-mcp
-    description: MCP server exposing Bnp Gitops Argocd Capability for AI agents.
+    description: MCP for BNP GitOps.
     tools:
-    - name: example
-      description: A capability deployed via GitOps (ArgoCD/Flux) with the NaftikoCapability CRD, framed for BNP's ArgoCD + regulatory-compliance language.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-apps, hints: {readOnly: true}, call: argocd.list-applications}
+    - name: sync-app
+      inputParameters: [{name: name, type: string, required: true}]
+      call: argocd.sync-application
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: bnp-gitops-argocd-capability-skills
-    description: Agent Skill bundle for Bnp Gitops Argocd Capability.
+    description: Skill for BNP GitOps.
     skills:
     - name: bnp-gitops-argocd-capability
-      description: A capability deployed via GitOps (ArgoCD/Flux) with the NaftikoCapability CRD, framed for BNP's ArgoCD + regulatory-compliance language.
+      description: BNP Argo CD GitOps deploys.
       location: file:///opt/naftiko/skills/bnp-gitops-argocd-capability
-      allowed-tools: example
+      allowed-tools: list-apps,sync-app
       tools:
-      - name: example
-        description: A capability deployed via GitOps (ArgoCD/Flux) with the NaftikoCapability CRD, framed for BNP's ArgoCD + regulatory-compliance language.
-        from:
-          sourceNamespace: bnp-gitops-argocd-capability-mcp
-          action: example
+      - {name: list-apps, from: {sourceNamespace: bnp-gitops-argocd-capability-mcp, action: list-apps}}
+      - {name: sync-app, from: {sourceNamespace: bnp-gitops-argocd-capability-mcp, action: sync-app}}

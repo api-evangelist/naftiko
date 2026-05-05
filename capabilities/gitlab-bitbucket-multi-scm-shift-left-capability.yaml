@@ -1,67 +1,70 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Gitlab Bitbucket Multi Scm Shift Left Capability
-  description: A capability that fans out across GitHub + GitLab + Bitbucket scan results from and exposes a unified MCP shift-left view.
-  tags:
-  - Naftiko
+  description: A capability that runs governance checks across GitLab + Bitbucket repos for orgs with multi-SCM estate, normalizing results into a single feed.
+  tags: [Naftiko, GitLab, Bitbucket, Multi-SCM]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: gitlab-env
+  keys: {GITLAB_HOST: GITLAB_HOST, GITLAB_TOKEN: GITLAB_TOKEN}
+- namespace: bitbucket-env
+  keys: {BITBUCKET_TOKEN: BITBUCKET_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: gitlab
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{GITLAB_HOST}}
+    authentication: {type: bearer, token: '{{GITLAB_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: projects, path: /api/v4/projects, operations: [{name: list-gitlab-projects, method: GET}]}
+    - name: project-mr
+      path: /api/v4/projects/{{project_id}}/merge_requests
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-merge-requests, method: GET, inputParameters: [{name: project_id, in: path}]}
+  - namespace: bitbucket
+    type: http
+    baseUri: https://api.bitbucket.org
+    authentication: {type: bearer, token: '{{BITBUCKET_TOKEN}}'}
+    resources:
+    - name: pull-requests
+      path: /2.0/repositories/{{workspace}}/{{repo}}/pullrequests
+      operations:
+      - {name: list-bitbucket-prs, method: GET, inputParameters: [{name: workspace, in: path}, {name: repo, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: gitlab-bitbucket-multi-scm-shift-left-capability-rest
-    description: REST API for Gitlab Bitbucket Multi Scm Shift Left Capability.
+    description: REST surface unifying GitLab + Bitbucket review feeds.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: review-feed, path: /review-feed, operations: [{method: GET, name: get-multi-scm-feed, call: gitlab.list-merge-requests}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: gitlab-bitbucket-multi-scm-shift-left-capability-mcp
-    description: MCP server exposing Gitlab Bitbucket Multi Scm Shift Left Capability for AI agents.
+    description: MCP for multi-SCM shift-left.
     tools:
-    - name: example
-      description: A capability that fans out across GitHub + GitLab + Bitbucket scan results from and exposes a unified MCP shift-left view.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-gitlab-projects, hints: {readOnly: true}, call: gitlab.list-gitlab-projects}
+    - name: list-merge-requests
+      hints: {readOnly: true}
+      inputParameters: [{name: project_id, type: string, required: true}]
+      call: gitlab.list-merge-requests
+    - name: list-bitbucket-prs
+      hints: {readOnly: true}
+      inputParameters: [{name: workspace, type: string, required: true}, {name: repo, type: string, required: true}]
+      call: bitbucket.list-bitbucket-prs
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: gitlab-bitbucket-multi-scm-shift-left-capability-skills
-    description: Agent Skill bundle for Gitlab Bitbucket Multi Scm Shift Left Capability.
+    description: Skill for multi-SCM shift-left.
     skills:
     - name: gitlab-bitbucket-multi-scm-shift-left-capability
-      description: A capability that fans out across GitHub + GitLab + Bitbucket scan results from and exposes a unified MCP shift-left view.
+      description: Multi-SCM shift-left governance.
       location: file:///opt/naftiko/skills/gitlab-bitbucket-multi-scm-shift-left-capability
-      allowed-tools: example
+      allowed-tools: list-gitlab-projects,list-merge-requests,list-bitbucket-prs
       tools:
-      - name: example
-        description: A capability that fans out across GitHub + GitLab + Bitbucket scan results from and exposes a unified MCP shift-left view.
-        from:
-          sourceNamespace: gitlab-bitbucket-multi-scm-shift-left-capability-mcp
-          action: example
+      - {name: list-gitlab-projects, from: {sourceNamespace: gitlab-bitbucket-multi-scm-shift-left-capability-mcp, action: list-gitlab-projects}}
+      - {name: list-merge-requests, from: {sourceNamespace: gitlab-bitbucket-multi-scm-shift-left-capability-mcp, action: list-merge-requests}}
+      - {name: list-bitbucket-prs, from: {sourceNamespace: gitlab-bitbucket-multi-scm-shift-left-capability-mcp, action: list-bitbucket-prs}}

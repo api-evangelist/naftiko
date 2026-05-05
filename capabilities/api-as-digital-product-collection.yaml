@@ -1,67 +1,69 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Api As Digital Product Collection
-  description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
-  tags:
-  - Naftiko
+  description: A collection capability shaping APIs as digital products with consumption metrics, lifecycle stage, and ownership exposed in one shaped object.
+  tags: [Naftiko, API Product, Collection]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: products, path: /v1/products, operations: [{name: list-products, method: GET}]}
+    - name: product
+      path: /v1/products/{{product_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-product, method: GET, inputParameters: [{name: product_id, in: path}]}
+    - name: product-metrics
+      path: /v1/products/{{product_id}}/metrics
+      operations:
+      - {name: get-product-metrics, method: GET, inputParameters: [{name: product_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: api-as-digital-product-collection-rest
-    description: REST API for Api As Digital Product Collection.
+    description: REST surface for browsing APIs as digital products.
     resources:
-    - name: example
-      path: /example
+    - name: products
+      path: /products
+      operations: [{method: GET, name: list-products, description: List APIs as digital products., call: naftiko-control.list-products}]
+    - name: product
+      path: /products/{{product_id}}
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: get-product
+        description: Get an API product with metrics, lifecycle, ownership.
+        inputParameters: [{name: product_id, in: path, type: string}]
+        call: naftiko-control.get-product
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: api-as-digital-product-collection-mcp
-    description: MCP server exposing Api As Digital Product Collection for AI agents.
+    description: MCP server for API-as-product browsing.
     tools:
-    - name: example
-      description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-products, description: List API products., hints: {readOnly: true}, call: naftiko-control.list-products}
+    - name: get-product
+      description: Get an API product.
+      hints: {readOnly: true}
+      inputParameters: [{name: product_id, type: string, required: true}]
+      call: naftiko-control.get-product
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: api-as-digital-product-collection-skills
-    description: Agent Skill bundle for Api As Digital Product Collection.
+    description: Skill bundle for API-as-product workflows.
     skills:
     - name: api-as-digital-product-collection
-      description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
+      description: API-as-product browsing and metrics.
       location: file:///opt/naftiko/skills/api-as-digital-product-collection
-      allowed-tools: example
+      allowed-tools: list-products,get-product
       tools:
-      - name: example
-        description: Composable capability collection that wraps a representative client API as a "digital product," with multiple `consumes` operations stitched into one externally-shaped capability and governance tags carrying provenance.
-        from:
-          sourceNamespace: api-as-digital-product-collection-mcp
-          action: example
+      - {name: list-products, from: {sourceNamespace: api-as-digital-product-collection-mcp, action: list-products}}
+      - {name: get-product, from: {sourceNamespace: api-as-digital-product-collection-mcp, action: get-product}}

@@ -1,67 +1,72 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Bloomberg Aim Deterministic Portfolio Mcp
-  description: A capability over Bloomberg AIM portfolio positions exposing typed, deterministic MCP reads for the AI-Data-Enterprise-Tech opening artifact.
-  tags:
-  - Naftiko
+  description: A capability over Bloomberg AIM that exposes deterministic portfolio reads (positions, attributions) as MCP tools — same inputs, same outputs, same hash.
+  tags: [Naftiko, Bloomberg, AIM, Portfolio]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: bloomberg-env
+  keys: {BLOOMBERG_TOKEN: BLOOMBERG_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: aim
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.bloomberg.com
+    authentication: {type: bearer, token: '{{BLOOMBERG_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: portfolio
+      path: /eap/aim/v1/portfolios/{{portfolio_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-portfolio, method: GET, inputParameters: [{name: portfolio_id, in: path}]}
+    - name: positions
+      path: /eap/aim/v1/portfolios/{{portfolio_id}}/positions
+      operations:
+      - {name: list-positions, method: GET, inputParameters: [{name: portfolio_id, in: path}]}
+    - name: attributions
+      path: /eap/aim/v1/portfolios/{{portfolio_id}}/attributions
+      operations:
+      - {name: list-attributions, method: GET, inputParameters: [{name: portfolio_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: bloomberg-aim-deterministic-portfolio-mcp-rest
-    description: REST API for Bloomberg Aim Deterministic Portfolio Mcp.
+    description: REST surface for deterministic AIM portfolio reads.
     resources:
-    - name: example
-      path: /example
+    - name: portfolio
+      path: /portfolios/{{portfolio_id}}
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: get-portfolio, inputParameters: [{name: portfolio_id, in: path, type: string}], call: aim.get-portfolio}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: bloomberg-aim-deterministic-portfolio-mcp-mcp
-    description: MCP server exposing Bloomberg Aim Deterministic Portfolio Mcp for AI agents.
+    description: MCP exposing AIM portfolio reads.
     tools:
-    - name: example
-      description: A capability over Bloomberg AIM portfolio positions exposing typed, deterministic MCP reads for the AI-Data-Enterprise-Tech opening artifact.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-portfolio
+      hints: {readOnly: true}
+      inputParameters: [{name: portfolio_id, type: string, required: true}]
+      call: aim.get-portfolio
+    - name: list-positions
+      hints: {readOnly: true}
+      inputParameters: [{name: portfolio_id, type: string, required: true}]
+      call: aim.list-positions
+    - name: list-attributions
+      hints: {readOnly: true}
+      inputParameters: [{name: portfolio_id, type: string, required: true}]
+      call: aim.list-attributions
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: bloomberg-aim-deterministic-portfolio-mcp-skills
-    description: Agent Skill bundle for Bloomberg Aim Deterministic Portfolio Mcp.
+    description: Skill for AIM portfolio.
     skills:
     - name: bloomberg-aim-deterministic-portfolio-mcp
-      description: A capability over Bloomberg AIM portfolio positions exposing typed, deterministic MCP reads for the AI-Data-Enterprise-Tech opening artifact.
+      description: Deterministic AIM portfolio reads.
       location: file:///opt/naftiko/skills/bloomberg-aim-deterministic-portfolio-mcp
-      allowed-tools: example
+      allowed-tools: get-portfolio,list-positions,list-attributions
       tools:
-      - name: example
-        description: A capability over Bloomberg AIM portfolio positions exposing typed, deterministic MCP reads for the AI-Data-Enterprise-Tech opening artifact.
-        from:
-          sourceNamespace: bloomberg-aim-deterministic-portfolio-mcp-mcp
-          action: example
+      - {name: get-portfolio, from: {sourceNamespace: bloomberg-aim-deterministic-portfolio-mcp-mcp, action: get-portfolio}}
+      - {name: list-positions, from: {sourceNamespace: bloomberg-aim-deterministic-portfolio-mcp-mcp, action: list-positions}}
+      - {name: list-attributions, from: {sourceNamespace: bloomberg-aim-deterministic-portfolio-mcp-mcp, action: list-attributions}}

@@ -1,67 +1,61 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Github Copilot Mcp Developer Onboarding Capability
-  description: A capability that exposes -internal Naftiko capabilities as MCP servers inside GitHub Copilot's VS Code extension window — the developer-onboarding fleet entry-point.
-  tags:
-  - Naftiko
+  description: A capability used to onboard new developers to GitHub Copilot's MCP support — points Copilot at Naftiko-hosted MCP servers and surfaces a curated list.
+  tags: [Naftiko, GitHub Copilot, MCP, Onboarding]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
+- namespace: github-env
+  keys: {GITHUB_TOKEN: GITHUB_TOKEN}
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
+    type: http
+    baseUri: https://api.github.com
+    authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
+    resources:
+    - name: copilot-config
+      path: /repos/{{owner}}/{{repo}}/contents/.github/copilot.yml
+      operations:
+      - {name: get-copilot-config, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: mcp-servers, path: /v1/mcp-servers, operations: [{name: list-mcp-servers, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: github-copilot-mcp-developer-onboarding-capability-rest
-    description: REST API for Github Copilot Mcp Developer Onboarding Capability.
+    description: REST surface for Copilot MCP onboarding.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: mcp-servers, path: /mcp-servers, operations: [{method: GET, name: list-mcp-servers, call: naftiko-control.list-mcp-servers}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: github-copilot-mcp-developer-onboarding-capability-mcp
-    description: MCP server exposing Github Copilot Mcp Developer Onboarding Capability for AI agents.
+    description: MCP for Copilot onboarding.
     tools:
-    - name: example
-      description: A capability that exposes -internal Naftiko capabilities as MCP servers inside GitHub Copilot's VS Code extension window — the developer-onboarding fleet entry-point.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-mcp-servers, hints: {readOnly: true}, call: naftiko-control.list-mcp-servers}
+    - name: get-copilot-config
+      hints: {readOnly: true}
+      inputParameters: [{name: owner, type: string, required: true}, {name: repo, type: string, required: true}]
+      call: github.get-copilot-config
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: github-copilot-mcp-developer-onboarding-capability-skills
-    description: Agent Skill bundle for Github Copilot Mcp Developer Onboarding Capability.
+    description: Skill for Copilot onboarding.
     skills:
     - name: github-copilot-mcp-developer-onboarding-capability
-      description: A capability that exposes -internal Naftiko capabilities as MCP servers inside GitHub Copilot's VS Code extension window — the developer-onboarding fleet entry-point.
+      description: Onboard developers to Copilot MCP.
       location: file:///opt/naftiko/skills/github-copilot-mcp-developer-onboarding-capability
-      allowed-tools: example
+      allowed-tools: list-mcp-servers,get-copilot-config
       tools:
-      - name: example
-        description: A capability that exposes -internal Naftiko capabilities as MCP servers inside GitHub Copilot's VS Code extension window — the developer-onboarding fleet entry-point.
-        from:
-          sourceNamespace: github-copilot-mcp-developer-onboarding-capability-mcp
-          action: example
+      - {name: list-mcp-servers, from: {sourceNamespace: github-copilot-mcp-developer-onboarding-capability-mcp, action: list-mcp-servers}}
+      - {name: get-copilot-config, from: {sourceNamespace: github-copilot-mcp-developer-onboarding-capability-mcp, action: get-copilot-config}}

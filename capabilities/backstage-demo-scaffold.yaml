@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Backstage Demo Scaffold
-  description: A capability scaffolded entirely from the Naftiko Templates for Backstage workflow, intended as Daniel's 2-minute live-demo sequence at apidays Munich (Choose template → generated repo → running engine).
-  tags:
-  - Naftiko
+  description: A scaffold capability that bootstraps a Backstage demo environment with example entities and TechDocs.
+  tags: [Naftiko, Backstage, Scaffold]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: backstage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: locations, path: /api/catalog/locations, operations: [{name: register-location, method: POST}]}
+    - {name: scaffolder-tasks, path: /api/scaffolder/v2/tasks, operations: [{name: run-scaffolder-task, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: backstage-demo-scaffold-rest
-    description: REST API for Backstage Demo Scaffold.
+    description: REST surface for scaffolding a Backstage demo.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: scaffold, path: /scaffold, operations: [{method: POST, name: scaffold-demo, call: backstage.run-scaffolder-task}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: backstage-demo-scaffold-mcp
-    description: MCP server exposing Backstage Demo Scaffold for AI agents.
+    description: MCP for Backstage scaffolding.
     tools:
-    - name: example
-      description: A capability scaffolded entirely from the Naftiko Templates for Backstage workflow, intended as Daniel's 2-minute live-demo sequence at apidays Munich (Choose template → generated repo → running engine).
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: scaffold-demo, call: backstage.run-scaffolder-task}
+    - {name: register-location, call: backstage.register-location}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: backstage-demo-scaffold-skills
-    description: Agent Skill bundle for Backstage Demo Scaffold.
+    description: Skill bundle for Backstage demo scaffolding.
     skills:
     - name: backstage-demo-scaffold
-      description: A capability scaffolded entirely from the Naftiko Templates for Backstage workflow, intended as Daniel's 2-minute live-demo sequence at apidays Munich (Choose template → generated repo → running engine).
+      description: Bootstrap a Backstage demo.
       location: file:///opt/naftiko/skills/backstage-demo-scaffold
-      allowed-tools: example
+      allowed-tools: scaffold-demo,register-location
       tools:
-      - name: example
-        description: A capability scaffolded entirely from the Naftiko Templates for Backstage workflow, intended as Daniel's 2-minute live-demo sequence at apidays Munich (Choose template → generated repo → running engine).
-        from:
-          sourceNamespace: backstage-demo-scaffold-mcp
-          action: example
+      - {name: scaffold-demo, from: {sourceNamespace: backstage-demo-scaffold-mcp, action: scaffold-demo}}
+      - {name: register-location, from: {sourceNamespace: backstage-demo-scaffold-mcp, action: register-location}}

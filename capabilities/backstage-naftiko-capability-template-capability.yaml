@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Backstage Naftiko Capability Template Capability
-  description: A capability that ships a Backstage Software Template bundling the NaftikoCapability CRD scaffold, so developers spin up a new governed capability from inside the developer portal without leaving Backstage.
-  tags:
-  - Naftiko
+  description: A Backstage software template that scaffolds a new Naftiko capability YAML and registers it in the catalog.
+  tags: [Naftiko, Backstage, Software Template]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: backstage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: scaffolder-tasks, path: /api/scaffolder/v2/tasks, operations: [{name: run-scaffolder-task, method: POST}]}
+    - {name: templates, path: /api/scaffolder/v2/templates, operations: [{name: list-templates, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: backstage-naftiko-capability-template-capability-rest
-    description: REST API for Backstage Naftiko Capability Template Capability.
+    description: REST surface for scaffolding a Naftiko capability via Backstage.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: new-capability, path: /new-capability, operations: [{method: POST, name: scaffold-capability, call: backstage.run-scaffolder-task}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: backstage-naftiko-capability-template-capability-mcp
-    description: MCP server exposing Backstage Naftiko Capability Template Capability for AI agents.
+    description: MCP for Backstage capability scaffolding.
     tools:
-    - name: example
-      description: A capability that ships a Backstage Software Template bundling the NaftikoCapability CRD scaffold, so developers spin up a new governed capability from inside the developer portal without leaving Backstage.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-templates, hints: {readOnly: true}, call: backstage.list-templates}
+    - {name: scaffold-capability, call: backstage.run-scaffolder-task}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: backstage-naftiko-capability-template-capability-skills
-    description: Agent Skill bundle for Backstage Naftiko Capability Template Capability.
+    description: Skill bundle for capability scaffolding.
     skills:
     - name: backstage-naftiko-capability-template-capability
-      description: A capability that ships a Backstage Software Template bundling the NaftikoCapability CRD scaffold, so developers spin up a new governed capability from inside the developer portal without leaving Backstage.
+      description: Scaffold a new Naftiko capability via Backstage.
       location: file:///opt/naftiko/skills/backstage-naftiko-capability-template-capability
-      allowed-tools: example
+      allowed-tools: list-templates,scaffold-capability
       tools:
-      - name: example
-        description: A capability that ships a Backstage Software Template bundling the NaftikoCapability CRD scaffold, so developers spin up a new governed capability from inside the developer portal without leaving Backstage.
-        from:
-          sourceNamespace: backstage-naftiko-capability-template-capability-mcp
-          action: example
+      - {name: list-templates, from: {sourceNamespace: backstage-naftiko-capability-template-capability-mcp, action: list-templates}}
+      - {name: scaffold-capability, from: {sourceNamespace: backstage-naftiko-capability-template-capability-mcp, action: scaffold-capability}}

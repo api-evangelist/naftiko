@@ -1,67 +1,57 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Capability First Reusability Reference
-  description: 'A reference capability tied to Guide-Use-Cases #9 (Capability-first API reusability), used as the dual-track proposal anchor.'
-  tags:
-  - Naftiko
+  description: A reference capability articulating the capability-first reusability pattern — capabilities as first-class units composed into higher-order capabilities.
+  tags: [Naftiko, Reusability, Reference]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: capabilities, path: /v1/capabilities, operations: [{name: list-capabilities, method: GET}]}
+    - name: capability-spec
+      path: /v1/capabilities/{{capability_id}}/spec
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-capability-spec, method: GET, inputParameters: [{name: capability_id, in: path}]}
+    - name: composition
+      path: /v1/capabilities/{{parent_id}}/compose
+      operations:
+      - {name: compose, method: POST, inputParameters: [{name: parent_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: capability-first-reusability-reference-rest
-    description: REST API for Capability First Reusability Reference.
+    description: REST surface for capability-first composition.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: capabilities, path: /capabilities, operations: [{method: GET, name: list-capabilities, call: naftiko-control.list-capabilities}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: capability-first-reusability-reference-mcp
-    description: MCP server exposing Capability First Reusability Reference for AI agents.
+    description: MCP for capability-first composition.
     tools:
-    - name: example
-      description: 'A reference capability tied to Guide-Use-Cases #9 (Capability-first API reusability), used as the dual-track proposal anchor.'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-capabilities, hints: {readOnly: true}, call: naftiko-control.list-capabilities}
+    - name: compose
+      inputParameters: [{name: parent_id, type: string, required: true}]
+      call: naftiko-control.compose
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: capability-first-reusability-reference-skills
-    description: Agent Skill bundle for Capability First Reusability Reference.
+    description: Skill for the reusability reference.
     skills:
     - name: capability-first-reusability-reference
-      description: 'A reference capability tied to Guide-Use-Cases #9 (Capability-first API reusability), used as the dual-track proposal anchor.'
+      description: Capability-first reusability reference.
       location: file:///opt/naftiko/skills/capability-first-reusability-reference
-      allowed-tools: example
+      allowed-tools: list-capabilities,compose
       tools:
-      - name: example
-        description: 'A reference capability tied to Guide-Use-Cases #9 (Capability-first API reusability), used as the dual-track proposal anchor.'
-        from:
-          sourceNamespace: capability-first-reusability-reference-mcp
-          action: example
+      - {name: list-capabilities, from: {sourceNamespace: capability-first-reusability-reference-mcp, action: list-capabilities}}
+      - {name: compose, from: {sourceNamespace: capability-first-reusability-reference-mcp, action: compose}}

@@ -4,64 +4,172 @@ info:
   description: A capability over Azure Databricks feature store, exposing typed model-feature retrieval as MCP for the AI assistant flows John is architecting.
   tags:
   - Naftiko
+  - Databricks
+  - Feature Store
+  - MLOps
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
+- namespace: databricks-env
+  description: Azure Databricks workspace host and personal access token.
   keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+    DATABRICKS_HOST: DATABRICKS_HOST
+    DATABRICKS_TOKEN: DATABRICKS_TOKEN
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: databricks
     type: http
-    baseUri: https://api.naftiko.com
+    baseUri: https://{{DATABRICKS_HOST}}
     authentication:
       type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+      token: '{{DATABRICKS_TOKEN}}'
     resources:
-    - name: example
-      path: /example
+    - name: feature-tables
+      path: /api/2.0/feature-store/feature-tables/get
       operations:
-      - name: example-op
+      - name: get-feature-table
         method: GET
+        inputParameters:
+        - name: name
+          in: query
+          description: Three-level feature-table name (catalog.schema.table).
+    - name: feature-table-search
+      path: /api/2.0/feature-store/feature-tables/search
+      operations:
+      - name: search-feature-tables
+        method: GET
+        inputParameters:
+        - name: text
+          in: query
+          description: Free-text search across feature table names and descriptions.
+        - name: max_results
+          in: query
+    - name: features
+      path: /api/2.0/feature-store/features/list
+      operations:
+      - name: list-features
+        method: GET
+        inputParameters:
+        - name: feature_table
+          in: query
+          description: Three-level feature-table name to list features for.
+    - name: online-stores
+      path: /api/2.0/feature-store/online-stores/list
+      operations:
+      - name: list-online-stores
+        method: GET
+    - name: model-serving-features
+      path: /api/2.0/feature-store/feature-tables/get-features
+      operations:
+      - name: get-features-for-model
+        method: POST
+        description: Retrieve typed feature values for a set of lookup keys, suitable for online inference.
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: databricks-feature-store-mcp-rest
-    description: REST API for Databricks Feature Store Mcp.
+    description: REST API exposing typed feature-store reads from Azure Databricks.
     resources:
-    - name: example
-      path: /example
+    - name: feature-tables
+      path: /feature-tables
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: search-feature-tables
+        description: Search feature tables by free-text query.
+        inputParameters:
+        - name: q
+          in: query
+          type: string
+        call: databricks.search-feature-tables
+    - name: feature-table
+      path: /feature-tables/{{name}}
+      operations:
+      - method: GET
+        name: get-feature-table
+        description: Fetch a feature table's schema, primary keys, online stores, and metadata.
+        inputParameters:
+        - name: name
+          in: path
+          type: string
+          description: Three-level feature-table name (catalog.schema.table).
+        call: databricks.get-feature-table
+    - name: model-features
+      path: /model-features
+      operations:
+      - method: POST
+        name: get-features-for-model
+        description: Retrieve typed feature values for a set of lookup keys.
+        call: databricks.get-features-for-model
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: databricks-feature-store-mcp-mcp
-    description: MCP server exposing Databricks Feature Store Mcp for AI agents.
+    description: MCP server giving AI assistants typed access to the Databricks feature store.
     tools:
-    - name: example
-      description: A capability over Azure Databricks feature store, exposing typed model-feature retrieval as MCP for the AI assistant flows John is architecting.
+    - name: search-feature-tables
+      description: Search feature tables in the Databricks feature store by free-text query.
       hints:
         readOnly: true
-      call: naftiko.example-op
+      inputParameters:
+      - name: q
+        type: string
+        required: true
+        description: Search text.
+      call: databricks.search-feature-tables
+    - name: get-feature-table
+      description: Get a feature table's schema, primary keys, source, online stores, and metadata.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: name
+        type: string
+        required: true
+        description: Three-level feature-table name (catalog.schema.table).
+      call: databricks.get-feature-table
+    - name: list-features
+      description: List features (columns and types) defined on a feature table.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: feature_table
+        type: string
+        required: true
+      call: databricks.list-features
+    - name: get-features-for-model
+      description: Retrieve typed feature values for one or more lookup keys for online inference.
+      hints:
+        readOnly: true
+      call: databricks.get-features-for-model
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: databricks-feature-store-mcp-skills
-    description: Agent Skill bundle for Databricks Feature Store Mcp.
+    description: Agent Skill bundle giving AI assistants typed feature-store access.
     skills:
     - name: databricks-feature-store-mcp
-      description: A capability over Azure Databricks feature store, exposing typed model-feature retrieval as MCP for the AI assistant flows John is architecting.
+      description: Typed model-feature retrieval from the Databricks feature store for AI assistant flows.
       location: file:///opt/naftiko/skills/databricks-feature-store-mcp
-      allowed-tools: example
+      allowed-tools: search-feature-tables,get-feature-table,list-features,get-features-for-model
+      argument-hint: 'Use when an agent needs to look up feature definitions or fetch typed feature values for inference.'
       tools:
-      - name: example
-        description: A capability over Azure Databricks feature store, exposing typed model-feature retrieval as MCP for the AI assistant flows John is architecting.
+      - name: search-feature-tables
+        description: Search feature tables.
         from:
           sourceNamespace: databricks-feature-store-mcp-mcp
-          action: example
+          action: search-feature-tables
+      - name: get-feature-table
+        description: Get a feature table's schema and metadata.
+        from:
+          sourceNamespace: databricks-feature-store-mcp-mcp
+          action: get-feature-table
+      - name: list-features
+        description: List features on a feature table.
+        from:
+          sourceNamespace: databricks-feature-store-mcp-mcp
+          action: list-features
+      - name: get-features-for-model
+        description: Retrieve typed feature values for inference.
+        from:
+          sourceNamespace: databricks-feature-store-mcp-mcp
+          action: get-features-for-model

@@ -1,67 +1,62 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Code Mode Context Window Capability
-  description: 'A capability that exposes "code mode" rightsizing pattern as a Naftiko MCP tool: feed it a base OpenAPI + a target task, get back the right-sized agent context.'
-  tags:
-  - Naftiko
+  description: A capability that packs IDE-relevant context (open files, recent diffs, related symbols) into a token-budgeted code-mode context window.
+  tags: [Naftiko, IDE, Context]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: github-env
+  keys: {GITHUB_TOKEN: GITHUB_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.github.com
+    authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: contents
+      path: /repos/{{owner}}/{{repo}}/contents/{{path}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-file, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}, {name: path, in: path}]}
+    - name: pulls
+      path: /repos/{{owner}}/{{repo}}/pulls
+      operations:
+      - {name: list-pulls, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
+    - name: pull-files
+      path: /repos/{{owner}}/{{repo}}/pulls/{{pull_number}}/files
+      operations:
+      - {name: list-pull-files, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}, {name: pull_number, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: code-mode-context-window-capability-rest
-    description: REST API for Code Mode Context Window Capability.
+    description: REST surface that builds a code-mode context window for an IDE prompt.
     resources:
-    - name: example
-      path: /example
+    - name: context
+      path: /context/{{owner}}/{{repo}}
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: get-code-context, inputParameters: [{name: owner, in: path, type: string}, {name: repo, in: path, type: string}], call: github.get-file}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: code-mode-context-window-capability-mcp
-    description: MCP server exposing Code Mode Context Window Capability for AI agents.
+    description: MCP for building IDE context windows.
     tools:
-    - name: example
-      description: 'A capability that exposes "code mode" rightsizing pattern as a Naftiko MCP tool: feed it a base OpenAPI + a target task, get back the right-sized agent context.'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-code-context
+      hints: {readOnly: true}
+      inputParameters: [{name: owner, type: string, required: true}, {name: repo, type: string, required: true}]
+      call: github.get-file
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: code-mode-context-window-capability-skills
-    description: Agent Skill bundle for Code Mode Context Window Capability.
+    description: Skill for code-mode context.
     skills:
     - name: code-mode-context-window-capability
-      description: 'A capability that exposes "code mode" rightsizing pattern as a Naftiko MCP tool: feed it a base OpenAPI + a target task, get back the right-sized agent context.'
+      description: Token-budgeted code-mode context window.
       location: file:///opt/naftiko/skills/code-mode-context-window-capability
-      allowed-tools: example
+      allowed-tools: get-code-context
       tools:
-      - name: example
-        description: 'A capability that exposes "code mode" rightsizing pattern as a Naftiko MCP tool: feed it a base OpenAPI + a target task, get back the right-sized agent context.'
-        from:
-          sourceNamespace: code-mode-context-window-capability-mcp
-          action: example
+      - {name: get-code-context, from: {sourceNamespace: code-mode-context-window-capability-mcp, action: get-code-context}}

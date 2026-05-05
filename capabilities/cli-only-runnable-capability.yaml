@@ -1,67 +1,58 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Cli Only Runnable Capability
-  description: A capability designed to be exercised entirely via the Naftiko CLI (no Docker daemon), demonstrating local validation, MCP test, and lint without any container runtime.
-  tags:
-  - Naftiko
+  description: A capability designed to run end-to-end via the Naftiko CLI without any portal interaction — fully scriptable for CI use.
+  tags: [Naftiko, CLI, Runnable]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: capability-runs, path: /v1/runs, operations: [{name: start-run, method: POST}]}
+    - name: run
+      path: /v1/runs/{{run_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-run, method: GET, inputParameters: [{name: run_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: cli-only-runnable-capability-rest
-    description: REST API for Cli Only Runnable Capability.
+    description: REST surface for CLI-driven runs.
     resources:
-    - name: example
-      path: /example
+    - {name: run, path: /runs, operations: [{method: POST, name: start-run, call: naftiko-control.start-run}]}
+    - name: run-status
+      path: /runs/{{run_id}}
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: get-run, inputParameters: [{name: run_id, in: path, type: string}], call: naftiko-control.get-run}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: cli-only-runnable-capability-mcp
-    description: MCP server exposing Cli Only Runnable Capability for AI agents.
+    description: MCP for CLI runs.
     tools:
-    - name: example
-      description: A capability designed to be exercised entirely via the Naftiko CLI (no Docker daemon), demonstrating local validation, MCP test, and lint without any container runtime.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: start-run, call: naftiko-control.start-run}
+    - name: get-run
+      hints: {readOnly: true}
+      inputParameters: [{name: run_id, type: string, required: true}]
+      call: naftiko-control.get-run
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: cli-only-runnable-capability-skills
-    description: Agent Skill bundle for Cli Only Runnable Capability.
+    description: Skill for CLI runs.
     skills:
     - name: cli-only-runnable-capability
-      description: A capability designed to be exercised entirely via the Naftiko CLI (no Docker daemon), demonstrating local validation, MCP test, and lint without any container runtime.
+      description: CLI-only runnable capability.
       location: file:///opt/naftiko/skills/cli-only-runnable-capability
-      allowed-tools: example
+      allowed-tools: start-run,get-run
       tools:
-      - name: example
-        description: A capability designed to be exercised entirely via the Naftiko CLI (no Docker daemon), demonstrating local validation, MCP test, and lint without any container runtime.
-        from:
-          sourceNamespace: cli-only-runnable-capability-mcp
-          action: example
+      - {name: start-run, from: {sourceNamespace: cli-only-runnable-capability-mcp, action: start-run}}
+      - {name: get-run, from: {sourceNamespace: cli-only-runnable-capability-mcp, action: get-run}}

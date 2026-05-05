@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
-  title: Devx Review Walkthrough
-  description: 'A capability built specifically for the analyst review brief, optimized to be probed in a 30-minute review window: VS Code extension + Backstage scaffold + downloadable Agent Skill.'
-  tags:
-  - Naftiko
+  title: Devx Redmonk Review Walkthrough
+  description: A walkthrough capability used to demo Naftiko DevX to RedMonk analysts — exposes a stripped-down, narratable surface.
+  tags: [Naftiko, DevX, RedMonk]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: capabilities, path: /v1/capabilities, operations: [{name: list-capabilities, method: GET}]}
+    - name: capability
+      path: /v1/capabilities/{{capability_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-capability, method: GET, inputParameters: [{name: capability_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
-    namespace: devx--review-walkthrough-rest
-    description: REST API for Devx Review Walkthrough.
+    namespace: devx-redmonk-review-walkthrough-rest
+    description: REST surface for the analyst walkthrough.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: capabilities, path: /capabilities, operations: [{method: GET, name: list-capabilities, call: naftiko-control.list-capabilities}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
-    namespace: devx--review-walkthrough-mcp
-    description: MCP server exposing Devx Review Walkthrough for AI agents.
+    namespace: devx-redmonk-review-walkthrough-mcp
+    description: MCP for the walkthrough.
     tools:
-    - name: example
-      description: 'A capability built specifically for the analyst review brief, optimized to be probed in a 30-minute review window: VS Code extension + Backstage scaffold + downloadable Agent Skill.'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-capabilities, hints: {readOnly: true}, call: naftiko-control.list-capabilities}
+    - name: get-capability
+      hints: {readOnly: true}
+      inputParameters: [{name: capability_id, type: string, required: true}]
+      call: naftiko-control.get-capability
   - type: skill
     address: 0.0.0.0
     port: 3011
-    namespace: devx--review-walkthrough-skills
-    description: Agent Skill bundle for Devx Review Walkthrough.
+    namespace: devx-redmonk-review-walkthrough-skills
+    description: Skill for the walkthrough.
     skills:
-    - name: devx--review-walkthrough
-      description: 'A capability built specifically for the analyst review brief, optimized to be probed in a 30-minute review window: VS Code extension + Backstage scaffold + downloadable Agent Skill.'
-      location: file:///opt/naftiko/skills/devx--review-walkthrough
-      allowed-tools: example
+    - name: devx-redmonk-review-walkthrough
+      description: RedMonk DevX walkthrough.
+      location: file:///opt/naftiko/skills/devx-redmonk-review-walkthrough
+      allowed-tools: list-capabilities,get-capability
       tools:
-      - name: example
-        description: 'A capability built specifically for the analyst review brief, optimized to be probed in a 30-minute review window: VS Code extension + Backstage scaffold + downloadable Agent Skill.'
-        from:
-          sourceNamespace: devx--review-walkthrough-mcp
-          action: example
+      - {name: list-capabilities, from: {sourceNamespace: devx-redmonk-review-walkthrough-mcp, action: list-capabilities}}
+      - {name: get-capability, from: {sourceNamespace: devx-redmonk-review-walkthrough-mcp, action: get-capability}}

@@ -1,67 +1,55 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Halmstad Molnlycke Avenga Wound Care Sandbox
-  description: A self-contained runnable sandbox that mocks a Mölnlycke wound-care device data source and exposes openEHR + FHIR via the Avenga-introduction-ready capability.
-  tags:
-  - Naftiko
+  description: A sandbox capability for the Halmstad/Mölnlycke/Avenga wound-care collaboration — wraps wound-imaging API plus a clinical decision-support call.
+  tags: [Naftiko, Healthcare, Wound Care, Sandbox]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: molnlycke-env
+  keys: {MOLNLYCKE_HOST: MOLNLYCKE_HOST, MOLNLYCKE_TOKEN: MOLNLYCKE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: molnlycke
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{MOLNLYCKE_HOST}}
+    authentication: {type: bearer, token: '{{MOLNLYCKE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: wound-images, path: /api/v1/wound-images, operations: [{name: upload-wound-image, method: POST}]}
+    - name: wound-assessment
+      path: /api/v1/wound-images/{{image_id}}/assessment
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-wound-assessment, method: GET, inputParameters: [{name: image_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: halmstad-molnlycke-avenga-wound-care-sandbox-rest
-    description: REST API for Halmstad Molnlycke Avenga Wound Care Sandbox.
+    description: Sandbox REST surface for wound-care.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: assessments, path: /assessments/{{image_id}}, operations: [{method: GET, name: get-wound-assessment, inputParameters: [{name: image_id, in: path, type: string}], call: molnlycke.get-wound-assessment}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: halmstad-molnlycke-avenga-wound-care-sandbox-mcp
-    description: MCP server exposing Halmstad Molnlycke Avenga Wound Care Sandbox for AI agents.
+    description: MCP for wound-care sandbox.
     tools:
-    - name: example
-      description: A self-contained runnable sandbox that mocks a Mölnlycke wound-care device data source and exposes openEHR + FHIR via the Avenga-introduction-ready capability.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-wound-assessment
+      hints: {readOnly: true}
+      inputParameters: [{name: image_id, type: string, required: true}]
+      call: molnlycke.get-wound-assessment
+    - name: upload-wound-image
+      call: molnlycke.upload-wound-image
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: halmstad-molnlycke-avenga-wound-care-sandbox-skills
-    description: Agent Skill bundle for Halmstad Molnlycke Avenga Wound Care Sandbox.
+    description: Skill for wound-care sandbox.
     skills:
     - name: halmstad-molnlycke-avenga-wound-care-sandbox
-      description: A self-contained runnable sandbox that mocks a Mölnlycke wound-care device data source and exposes openEHR + FHIR via the Avenga-introduction-ready capability.
+      description: Wound-care sandbox.
       location: file:///opt/naftiko/skills/halmstad-molnlycke-avenga-wound-care-sandbox
-      allowed-tools: example
+      allowed-tools: get-wound-assessment,upload-wound-image
       tools:
-      - name: example
-        description: A self-contained runnable sandbox that mocks a Mölnlycke wound-care device data source and exposes openEHR + FHIR via the Avenga-introduction-ready capability.
-        from:
-          sourceNamespace: halmstad-molnlycke-avenga-wound-care-sandbox-mcp
-          action: example
+      - {name: get-wound-assessment, from: {sourceNamespace: halmstad-molnlycke-avenga-wound-care-sandbox-mcp, action: get-wound-assessment}}
+      - {name: upload-wound-image, from: {sourceNamespace: halmstad-molnlycke-avenga-wound-care-sandbox-mcp, action: upload-wound-image}}

@@ -1,67 +1,62 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Devsecops Shift Left Governance Capability
-  description: A capability where the Naftiko Spectral ruleset + blocking rules (auth required, HTTPS only, destructive-ops gate) + PII surface detection are wired in as the shift-left governance story.
-  tags:
-  - Naftiko
+  description: A capability shifting governance left into the dev workflow — runs Spectral + 42Crunch + secret scans on PR open and emits a governance event.
+  tags: [Naftiko, DevSecOps, Shift-Left]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: github-env
+  keys: {GITHUB_TOKEN: GITHUB_TOKEN}
+- namespace: fortytwocrunch-env
+  keys: {FORTYTWOCRUNCH_TOKEN: FORTYTWOCRUNCH_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.github.com
+    authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: pulls
+      path: /repos/{{owner}}/{{repo}}/pulls
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-pulls, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
+    - name: pull-checks
+      path: /repos/{{owner}}/{{repo}}/check-runs
+      operations:
+      - {name: create-check-run, method: POST, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
+  - namespace: fortytwocrunch
+    type: http
+    baseUri: https://platform.42crunch.com
+    authentication: {type: bearer, token: '{{FORTYTWOCRUNCH_TOKEN}}'}
+    resources:
+    - {name: apis, path: /api/v2/apis, operations: [{name: import-api, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: devsecops-shift-left-governance-capability-rest
-    description: REST API for Devsecops Shift Left Governance Capability.
+    description: REST surface for shift-left governance.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: scan-pr, path: /scan-pr, operations: [{method: POST, name: scan-pr, call: fortytwocrunch.import-api}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: devsecops-shift-left-governance-capability-mcp
-    description: MCP server exposing Devsecops Shift Left Governance Capability for AI agents.
+    description: MCP for shift-left governance.
     tools:
-    - name: example
-      description: A capability where the Naftiko Spectral ruleset + blocking rules (auth required, HTTPS only, destructive-ops gate) + PII surface detection are wired in as the shift-left governance story.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: scan-pr, call: fortytwocrunch.import-api}
+    - {name: list-pulls, hints: {readOnly: true}, call: github.list-pulls}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: devsecops-shift-left-governance-capability-skills
-    description: Agent Skill bundle for Devsecops Shift Left Governance Capability.
+    description: Skill for shift-left governance.
     skills:
     - name: devsecops-shift-left-governance-capability
-      description: A capability where the Naftiko Spectral ruleset + blocking rules (auth required, HTTPS only, destructive-ops gate) + PII surface detection are wired in as the shift-left governance story.
+      description: Shift-left DevSecOps governance.
       location: file:///opt/naftiko/skills/devsecops-shift-left-governance-capability
-      allowed-tools: example
+      allowed-tools: scan-pr,list-pulls
       tools:
-      - name: example
-        description: A capability where the Naftiko Spectral ruleset + blocking rules (auth required, HTTPS only, destructive-ops gate) + PII surface detection are wired in as the shift-left governance story.
-        from:
-          sourceNamespace: devsecops-shift-left-governance-capability-mcp
-          action: example
+      - {name: scan-pr, from: {sourceNamespace: devsecops-shift-left-governance-capability-mcp, action: scan-pr}}
+      - {name: list-pulls, from: {sourceNamespace: devsecops-shift-left-governance-capability-mcp, action: list-pulls}}

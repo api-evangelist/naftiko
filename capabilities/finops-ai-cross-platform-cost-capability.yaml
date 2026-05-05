@@ -1,67 +1,69 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Finops Ai Cross Platform Cost Capability
-  description: A capability that fans out to every AI-spend source touches (Microsoft, Google, Anthropic, Open Router, vendor-specific dashboards) and returns one cross-platform AI cost-of-ownership view by capability, team, and agent.
-  tags:
-  - Naftiko
+  description: A FinOps capability over AWS + Azure + GCP cost APIs producing a cross-platform AI-spend rollup for FinOps agents.
+  tags: [Naftiko, FinOps, Multi-Cloud]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: aws-env
+  keys: {AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY, AWS_REGION: AWS_REGION}
+- namespace: azure-env
+  keys: {AZURE_TOKEN: AZURE_TOKEN, AZURE_SUBSCRIPTION: AZURE_SUBSCRIPTION}
+- namespace: gcp-env
+  keys: {GCP_TOKEN: GCP_TOKEN, GCP_PROJECT: GCP_PROJECT}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: aws-cost
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://ce.{{AWS_REGION}}.amazonaws.com
+    authentication: {type: aws-sig-v4, accessKeyId: '{{AWS_ACCESS_KEY_ID}}', secretKey: '{{AWS_SECRET_ACCESS_KEY}}', region: '{{AWS_REGION}}', service: ce}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: cost-and-usage, path: /, operations: [{name: get-cost-and-usage, method: POST, description: AWS Cost Explorer GetCostAndUsage.}]}
+  - namespace: azure-cost
+    type: http
+    baseUri: https://management.azure.com
+    authentication: {type: bearer, token: '{{AZURE_TOKEN}}'}
+    resources:
+    - name: cost-management
+      path: /subscriptions/{{AZURE_SUBSCRIPTION}}/providers/Microsoft.CostManagement/query
+      operations: [{name: query-azure-costs, method: POST}]
+  - namespace: gcp-billing
+    type: http
+    baseUri: https://cloudbilling.googleapis.com
+    authentication: {type: bearer, token: '{{GCP_TOKEN}}'}
+    resources:
+    - {name: projects, path: /v1/projects/{{GCP_PROJECT}}/billingInfo, operations: [{name: get-billing-info, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: finops-ai-cross-platform-cost-capability-rest
-    description: REST API for Finops Ai Cross Platform Cost Capability.
+    description: REST surface for cross-platform AI-spend rollup.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: ai-spend, path: /ai-spend, operations: [{method: GET, name: get-ai-spend-rollup, call: aws-cost.get-cost-and-usage}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: finops-ai-cross-platform-cost-capability-mcp
-    description: MCP server exposing Finops Ai Cross Platform Cost Capability for AI agents.
+    description: MCP for FinOps AI-spend rollup.
     tools:
-    - name: example
-      description: A capability that fans out to every AI-spend source touches (Microsoft, Google, Anthropic, Open Router, vendor-specific dashboards) and returns one cross-platform AI cost-of-ownership view by capability, team, and agent.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-aws-cost, hints: {readOnly: true}, call: aws-cost.get-cost-and-usage}
+    - {name: get-azure-cost, hints: {readOnly: true}, call: azure-cost.query-azure-costs}
+    - {name: get-gcp-billing, hints: {readOnly: true}, call: gcp-billing.get-billing-info}
+    - {name: get-ai-spend-rollup, hints: {readOnly: true}, call: aws-cost.get-cost-and-usage}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: finops-ai-cross-platform-cost-capability-skills
-    description: Agent Skill bundle for Finops Ai Cross Platform Cost Capability.
+    description: Skill for FinOps AI-spend.
     skills:
     - name: finops-ai-cross-platform-cost-capability
-      description: A capability that fans out to every AI-spend source touches (Microsoft, Google, Anthropic, Open Router, vendor-specific dashboards) and returns one cross-platform AI cost-of-ownership view by capability, team, and agent.
+      description: Cross-platform AI-spend FinOps.
       location: file:///opt/naftiko/skills/finops-ai-cross-platform-cost-capability
-      allowed-tools: example
+      allowed-tools: get-aws-cost,get-azure-cost,get-gcp-billing,get-ai-spend-rollup
       tools:
-      - name: example
-        description: A capability that fans out to every AI-spend source touches (Microsoft, Google, Anthropic, Open Router, vendor-specific dashboards) and returns one cross-platform AI cost-of-ownership view by capability, team, and agent.
-        from:
-          sourceNamespace: finops-ai-cross-platform-cost-capability-mcp
-          action: example
+      - {name: get-aws-cost, from: {sourceNamespace: finops-ai-cross-platform-cost-capability-mcp, action: get-aws-cost}}
+      - {name: get-azure-cost, from: {sourceNamespace: finops-ai-cross-platform-cost-capability-mcp, action: get-azure-cost}}
+      - {name: get-gcp-billing, from: {sourceNamespace: finops-ai-cross-platform-cost-capability-mcp, action: get-gcp-billing}}
+      - {name: get-ai-spend-rollup, from: {sourceNamespace: finops-ai-cross-platform-cost-capability-mcp, action: get-ai-spend-rollup}}

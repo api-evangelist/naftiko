@@ -1,67 +1,50 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Developer Portal Public Market Data Mcp
-  description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
-  tags:
-  - Naftiko
+  description: A capability over a public market-data API exposed through a developer portal as MCP, so external developers can pull quotes via agents.
+  tags: [Naftiko, Market Data, Developer Portal]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: alphavantage-env
+  keys: {ALPHAVANTAGE_API_KEY: ALPHAVANTAGE_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: alphavantage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://www.alphavantage.co
     resources:
-    - name: example
-      path: /example
+    - name: quote
+      path: /query
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-quote, method: GET, inputParameters: [{name: function, in: query}, {name: symbol, in: query}, {name: apikey, in: query}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: developer-portal-public-market-data-mcp-rest
-    description: REST API for Developer Portal Public Market Data Mcp.
+    description: REST surface for public market data.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: quote, path: /quote/{{symbol}}, operations: [{method: GET, name: get-quote, inputParameters: [{name: symbol, in: path, type: string}], call: alphavantage.get-quote}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: developer-portal-public-market-data-mcp-mcp
-    description: MCP server exposing Developer Portal Public Market Data Mcp for AI agents.
+    description: MCP for public market data.
     tools:
-    - name: example
-      description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-quote
+      hints: {readOnly: true}
+      inputParameters: [{name: symbol, type: string, required: true}]
+      call: alphavantage.get-quote
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: developer-portal-public-market-data-mcp-skills
-    description: Agent Skill bundle for Developer Portal Public Market Data Mcp.
+    description: Skill for public market data.
     skills:
     - name: developer-portal-public-market-data-mcp
-      description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
+      description: Public market-data MCP via developer portal.
       location: file:///opt/naftiko/skills/developer-portal-public-market-data-mcp
-      allowed-tools: example
+      allowed-tools: get-quote
       tools:
-      - name: example
-        description: A capability wrapping a public developer portal endpoint (markets / Onyx public data) plus FRED as a backing public source, governance-tagged for banking compliance.
-        from:
-          sourceNamespace: developer-portal-public-market-data-mcp-mcp
-          action: example
+      - {name: get-quote, from: {sourceNamespace: developer-portal-public-market-data-mcp-mcp, action: get-quote}}

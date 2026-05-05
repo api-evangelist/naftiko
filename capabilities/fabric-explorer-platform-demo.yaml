@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Fabric Explorer Platform Demo
-  description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
-  tags:
-  - Naftiko
+  description: A demo capability over Microsoft Fabric exposing the platform explorer (workspaces, items, lakehouses) as a Naftiko capability.
+  tags: [Naftiko, Microsoft Fabric, Demo]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: fabric-env
+  keys: {FABRIC_TOKEN: FABRIC_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: fabric
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.fabric.microsoft.com
+    authentication: {type: bearer, token: '{{FABRIC_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: workspaces, path: /v1/workspaces, operations: [{name: list-workspaces, method: GET}]}
+    - name: workspace-items
+      path: /v1/workspaces/{{workspace_id}}/items
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-workspace-items, method: GET, inputParameters: [{name: workspace_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: fabric-explorer-platform-demo-rest
-    description: REST API for Fabric Explorer Platform Demo.
+    description: REST surface for Fabric platform explorer.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: workspaces, path: /workspaces, operations: [{method: GET, name: list-workspaces, call: fabric.list-workspaces}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: fabric-explorer-platform-demo-mcp
-    description: MCP server exposing Fabric Explorer Platform Demo for AI agents.
+    description: MCP for Fabric explorer.
     tools:
-    - name: example
-      description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-workspaces, hints: {readOnly: true}, call: fabric.list-workspaces}
+    - name: list-workspace-items
+      hints: {readOnly: true}
+      inputParameters: [{name: workspace_id, type: string, required: true}]
+      call: fabric.list-workspace-items
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: fabric-explorer-platform-demo-skills
-    description: Agent Skill bundle for Fabric Explorer Platform Demo.
+    description: Skill for Fabric explorer.
     skills:
     - name: fabric-explorer-platform-demo
-      description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
+      description: Microsoft Fabric platform explorer demo.
       location: file:///opt/naftiko/skills/fabric-explorer-platform-demo
-      allowed-tools: example
+      allowed-tools: list-workspaces,list-workspace-items
       tools:
-      - name: example
-        description: A capability bundle wired into NaftikoFabricExplorerPage + Federation Across Fabrics, framed as -Terminal-grade for API platform leadership.
-        from:
-          sourceNamespace: fabric-explorer-platform-demo-mcp
-          action: example
+      - {name: list-workspaces, from: {sourceNamespace: fabric-explorer-platform-demo-mcp, action: list-workspaces}}
+      - {name: list-workspace-items, from: {sourceNamespace: fabric-explorer-platform-demo-mcp, action: list-workspace-items}}

@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Co Marketing Spec Rules Companion
-  description: A reference capability tied to a co-authored guide based on framework-wiki/Specification-Rules — the partnership format that fits her product-marketing role.
-  tags:
-  - Naftiko
+  description: A companion capability that runs Spectral rules co-developed with co-marketing partners against a target OpenAPI spec.
+  tags: [Naftiko, Spectral, Co-Marketing]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: stoplight-env
+  keys: {STOPLIGHT_TOKEN: STOPLIGHT_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: stoplight
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.stoplight.io
+    authentication: {type: bearer, token: '{{STOPLIGHT_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: lint, path: /v1/projects/{{project_id}}/lint, operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
+    - name: ruleset
+      path: /v1/rulesets/{{ruleset_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-ruleset, method: GET, inputParameters: [{name: ruleset_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: co-marketing-spec-rules-companion-rest
-    description: REST API for Co Marketing Spec Rules Companion.
+    description: REST surface for running co-marketing Spectral rules.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: lint, path: /lint, operations: [{method: POST, name: lint-spec, call: stoplight.lint-spec}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: co-marketing-spec-rules-companion-mcp
-    description: MCP server exposing Co Marketing Spec Rules Companion for AI agents.
+    description: MCP for running co-marketing rules.
     tools:
-    - name: example
-      description: A reference capability tied to a co-authored guide based on framework-wiki/Specification-Rules — the partnership format that fits her product-marketing role.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: lint-spec, call: stoplight.lint-spec}
+    - name: get-ruleset
+      hints: {readOnly: true}
+      inputParameters: [{name: ruleset_id, type: string, required: true}]
+      call: stoplight.get-ruleset
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: co-marketing-spec-rules-companion-skills
-    description: Agent Skill bundle for Co Marketing Spec Rules Companion.
+    description: Skill for co-marketing rules.
     skills:
     - name: co-marketing-spec-rules-companion
-      description: A reference capability tied to a co-authored guide based on framework-wiki/Specification-Rules — the partnership format that fits her product-marketing role.
+      description: Co-marketing Spectral rules companion.
       location: file:///opt/naftiko/skills/co-marketing-spec-rules-companion
-      allowed-tools: example
+      allowed-tools: lint-spec,get-ruleset
       tools:
-      - name: example
-        description: A reference capability tied to a co-authored guide based on framework-wiki/Specification-Rules — the partnership format that fits her product-marketing role.
-        from:
-          sourceNamespace: co-marketing-spec-rules-companion-mcp
-          action: example
+      - {name: lint-spec, from: {sourceNamespace: co-marketing-spec-rules-companion-mcp, action: lint-spec}}
+      - {name: get-ruleset, from: {sourceNamespace: co-marketing-spec-rules-companion-mcp, action: get-ruleset}}

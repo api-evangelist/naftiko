@@ -1,67 +1,53 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Deterministic Sdk Pipeline Capability
-  description: A capability where the spec is the source of truth for both the engine runtime and the downstream SDK pipeline, demonstrating the deterministic flow end-to-end.
-  tags:
-  - Naftiko
+  description: A capability over a deterministic SDK pipeline (Speakeasy / Stainless / Fern) that regenerates SDKs on every spec change with a verifiable hash.
+  tags: [Naftiko, SDK, Pipeline, Speakeasy]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: speakeasy-env
+  keys: {SPEAKEASY_API_KEY: SPEAKEASY_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: speakeasy
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.speakeasy.com
+    authentication: {type: bearer, token: '{{SPEAKEASY_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: workspaces, path: /v1/workspaces, operations: [{name: list-workspaces, method: GET}]}
+    - name: sdk-generation
+      path: /v1/workspaces/{{workspace_id}}/generate
       operations:
-      - name: example-op
-        method: GET
+      - {name: generate-sdks, method: POST, inputParameters: [{name: workspace_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: deterministic-sdk-pipeline-capability-rest
-    description: REST API for Deterministic Sdk Pipeline Capability.
+    description: REST surface for SDK generation.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: generate, path: /generate/{{workspace_id}}, operations: [{method: POST, name: generate-sdks, inputParameters: [{name: workspace_id, in: path, type: string}], call: speakeasy.generate-sdks}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: deterministic-sdk-pipeline-capability-mcp
-    description: MCP server exposing Deterministic Sdk Pipeline Capability for AI agents.
+    description: MCP for SDK pipeline.
     tools:
-    - name: example
-      description: A capability where the spec is the source of truth for both the engine runtime and the downstream SDK pipeline, demonstrating the deterministic flow end-to-end.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-workspaces, hints: {readOnly: true}, call: speakeasy.list-workspaces}
+    - name: generate-sdks
+      inputParameters: [{name: workspace_id, type: string, required: true}]
+      call: speakeasy.generate-sdks
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: deterministic-sdk-pipeline-capability-skills
-    description: Agent Skill bundle for Deterministic Sdk Pipeline Capability.
+    description: Skill for SDK pipeline.
     skills:
     - name: deterministic-sdk-pipeline-capability
-      description: A capability where the spec is the source of truth for both the engine runtime and the downstream SDK pipeline, demonstrating the deterministic flow end-to-end.
+      description: Deterministic SDK pipeline.
       location: file:///opt/naftiko/skills/deterministic-sdk-pipeline-capability
-      allowed-tools: example
+      allowed-tools: list-workspaces,generate-sdks
       tools:
-      - name: example
-        description: A capability where the spec is the source of truth for both the engine runtime and the downstream SDK pipeline, demonstrating the deterministic flow end-to-end.
-        from:
-          sourceNamespace: deterministic-sdk-pipeline-capability-mcp
-          action: example
+      - {name: list-workspaces, from: {sourceNamespace: deterministic-sdk-pipeline-capability-mcp, action: list-workspaces}}
+      - {name: generate-sdks, from: {sourceNamespace: deterministic-sdk-pipeline-capability-mcp, action: generate-sdks}}

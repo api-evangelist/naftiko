@@ -4,64 +4,102 @@ info:
   description: A capability that exposes Naftiko-managed capabilities via Google's A2A (agent-to-agent) protocol in addition to MCP, so cross-vendor agent calls land on the same governed capability.
   tags:
   - Naftiko
+  - A2A
+  - Agent
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
+  description: Naftiko control-plane API token.
   keys:
     NAFTIKO_API_KEY: NAFTIKO_API_KEY
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
     authentication:
       type: bearer
       token: '{{NAFTIKO_API_KEY}}'
     resources:
-    - name: example
-      path: /example
+    - name: capabilities
+      path: /v1/capabilities
       operations:
-      - name: example-op
+      - name: list-capabilities
         method: GET
+    - name: capability
+      path: /v1/capabilities/{{capability_id}}
+      operations:
+      - name: get-capability
+        method: GET
+        inputParameters:
+        - name: capability_id
+          in: path
+    - name: capability-invoke
+      path: /v1/capabilities/{{capability_id}}/invoke
+      operations:
+      - name: invoke-capability
+        method: POST
+        inputParameters:
+        - name: capability_id
+          in: path
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: a2a-protocol-agent-bridge-capability-rest
-    description: REST API for A2a Protocol Agent Bridge Capability.
+    description: A2A-protocol REST surface that mirrors Naftiko capabilities for cross-vendor agent calls.
     resources:
-    - name: example
-      path: /example
+    - name: agent-card
+      path: /.well-known/agent.json
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: get-agent-card
+        description: A2A agent card listing all Naftiko capabilities as A2A-callable skills.
+        call: naftiko-control.list-capabilities
+    - name: messages
+      path: /a2a/v1/messages
+      operations:
+      - method: POST
+        name: send-message
+        description: Receive an A2A message and dispatch it to the matching Naftiko capability.
+        call: naftiko-control.invoke-capability
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: a2a-protocol-agent-bridge-capability-mcp
-    description: MCP server exposing A2a Protocol Agent Bridge Capability for AI agents.
+    description: MCP mirror so the same capabilities are reachable from MCP-only agents.
     tools:
-    - name: example
-      description: A capability that exposes Naftiko-managed capabilities via Google's A2A (agent-to-agent) protocol in addition to MCP, so cross-vendor agent calls land on the same governed capability.
+    - name: list-bridged-capabilities
+      description: List Naftiko capabilities exposed through the A2A bridge.
       hints:
         readOnly: true
-      call: naftiko.example-op
+      call: naftiko-control.list-capabilities
+    - name: invoke-bridged-capability
+      description: Invoke a Naftiko capability through the A2A bridge with an A2A message payload.
+      inputParameters:
+      - name: capability_id
+        type: string
+        required: true
+      call: naftiko-control.invoke-capability
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: a2a-protocol-agent-bridge-capability-skills
-    description: Agent Skill bundle for A2a Protocol Agent Bridge Capability.
+    description: Agent Skill bundle for installing the A2A bridge tooling into agent runtimes.
     skills:
     - name: a2a-protocol-agent-bridge-capability
-      description: A capability that exposes Naftiko-managed capabilities via Google's A2A (agent-to-agent) protocol in addition to MCP, so cross-vendor agent calls land on the same governed capability.
+      description: Cross-vendor agent calls land on the same Naftiko-governed capability.
       location: file:///opt/naftiko/skills/a2a-protocol-agent-bridge-capability
-      allowed-tools: example
+      allowed-tools: list-bridged-capabilities,invoke-bridged-capability
       tools:
-      - name: example
-        description: A capability that exposes Naftiko-managed capabilities via Google's A2A (agent-to-agent) protocol in addition to MCP, so cross-vendor agent calls land on the same governed capability.
+      - name: list-bridged-capabilities
+        description: List bridged capabilities.
         from:
           sourceNamespace: a2a-protocol-agent-bridge-capability-mcp
-          action: example
+          action: list-bridged-capabilities
+      - name: invoke-bridged-capability
+        description: Invoke a bridged capability.
+        from:
+          sourceNamespace: a2a-protocol-agent-bridge-capability-mcp
+          action: invoke-bridged-capability

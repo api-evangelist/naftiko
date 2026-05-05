@@ -2,66 +2,88 @@ naftiko: 1.0.0-alpha2
 info:
   title: Airflow Prefect Dagster Pipeline Reusability Capability
   description: A Capability Composition over the Airflow + Prefect + Dagster pipeline trio that exposes shared steps as reusable capabilities — the API-reusability ask, made concrete on actual data stack.
-  tags:
-  - Naftiko
+  tags: [Naftiko, Airflow, Prefect, Dagster, Reusability]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: airflow-env
+  keys: {AIRFLOW_HOST: AIRFLOW_HOST, AIRFLOW_TOKEN: AIRFLOW_TOKEN}
+- namespace: prefect-env
+  keys: {PREFECT_HOST: PREFECT_HOST, PREFECT_TOKEN: PREFECT_TOKEN}
+- namespace: dagster-env
+  keys: {DAGSTER_HOST: DAGSTER_HOST, DAGSTER_TOKEN: DAGSTER_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: airflow
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{AIRFLOW_HOST}}
+    authentication: {type: bearer, token: '{{AIRFLOW_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: dags
+      path: /api/v1/dags
+      operations: [{name: list-dags, method: GET}]
+    - name: dag-run
+      path: /api/v1/dags/{{dag_id}}/dagRuns
       operations:
-      - name: example-op
-        method: GET
+      - {name: trigger-dag, method: POST, inputParameters: [{name: dag_id, in: path}]}
+  - namespace: prefect
+    type: http
+    baseUri: https://{{PREFECT_HOST}}
+    authentication: {type: bearer, token: '{{PREFECT_TOKEN}}'}
+    resources:
+    - name: deployments
+      path: /api/deployments/filter
+      operations: [{name: list-deployments, method: POST}]
+    - name: deployment-run
+      path: /api/deployments/{{deployment_id}}/create_flow_run
+      operations:
+      - {name: trigger-deployment, method: POST, inputParameters: [{name: deployment_id, in: path}]}
+  - namespace: dagster
+    type: http
+    baseUri: https://{{DAGSTER_HOST}}
+    authentication: {type: bearer, token: '{{DAGSTER_TOKEN}}'}
+    resources:
+    - name: graphql
+      path: /graphql
+      operations: [{name: graphql-query, method: POST, description: Dagster GraphQL endpoint for jobs and runs.}]
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: airflow-prefect-dagster-pipeline-reusability-capability-rest
-    description: REST API for Airflow Prefect Dagster Pipeline Reusability Capability.
+    description: REST surface exposing shared pipeline steps reusable across Airflow/Prefect/Dagster.
     resources:
-    - name: example
-      path: /example
+    - name: trigger
+      path: /pipelines/{{pipeline_id}}/trigger
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - method: POST
+        name: trigger-shared-pipeline
+        description: Trigger a shared pipeline step on whichever orchestrator owns it.
+        inputParameters: [{name: pipeline_id, in: path, type: string}]
+        call: airflow.trigger-dag
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: airflow-prefect-dagster-pipeline-reusability-capability-mcp
-    description: MCP server exposing Airflow Prefect Dagster Pipeline Reusability Capability for AI agents.
+    description: MCP server for cross-orchestrator pipeline triggering.
     tools:
-    - name: example
-      description: A Capability Composition over the Airflow + Prefect + Dagster pipeline trio that exposes shared steps as reusable capabilities — the API-reusability ask, made concrete on actual data stack.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-airflow-dags, description: List Airflow DAGs., hints: {readOnly: true}, call: airflow.list-dags}
+    - {name: list-prefect-deployments, description: List Prefect deployments., call: prefect.list-deployments}
+    - name: trigger-shared-pipeline
+      description: Trigger a shared pipeline step.
+      inputParameters: [{name: pipeline_id, type: string, required: true}]
+      call: airflow.trigger-dag
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: airflow-prefect-dagster-pipeline-reusability-capability-skills
-    description: Agent Skill bundle for Airflow Prefect Dagster Pipeline Reusability Capability.
+    description: Skill bundle for reusable pipeline triggering.
     skills:
     - name: airflow-prefect-dagster-pipeline-reusability-capability
-      description: A Capability Composition over the Airflow + Prefect + Dagster pipeline trio that exposes shared steps as reusable capabilities — the API-reusability ask, made concrete on actual data stack.
+      description: Trigger shared pipeline steps across Airflow, Prefect, Dagster.
       location: file:///opt/naftiko/skills/airflow-prefect-dagster-pipeline-reusability-capability
-      allowed-tools: example
+      allowed-tools: list-airflow-dags,list-prefect-deployments,trigger-shared-pipeline
       tools:
-      - name: example
-        description: A Capability Composition over the Airflow + Prefect + Dagster pipeline trio that exposes shared steps as reusable capabilities — the API-reusability ask, made concrete on actual data stack.
-        from:
-          sourceNamespace: airflow-prefect-dagster-pipeline-reusability-capability-mcp
-          action: example
+      - {name: list-airflow-dags, from: {sourceNamespace: airflow-prefect-dagster-pipeline-reusability-capability-mcp, action: list-airflow-dags}}
+      - {name: list-prefect-deployments, from: {sourceNamespace: airflow-prefect-dagster-pipeline-reusability-capability-mcp, action: list-prefect-deployments}}
+      - {name: trigger-shared-pipeline, from: {sourceNamespace: airflow-prefect-dagster-pipeline-reusability-capability-mcp, action: trigger-shared-pipeline}}

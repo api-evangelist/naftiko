@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Governance Automation Runtime Capability
-  description: A capability whose governance ruleset (Spectral rules, Kyverno admission control, NaftikoGovernanceFactRetriever, NaftikoScorecardCard) is wired in as the runtime for automation-of-governance thesis.
-  tags:
-  - Naftiko
+  description: A runtime capability that automates governance evaluation across consumed APIs — every call goes through Spectral + capability-rule + audit pipeline.
+  tags: [Naftiko, Governance, Runtime]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: governance-rules, path: /v1/governance/rules, operations: [{name: list-rules, method: GET}]}
+    - {name: governance-evaluations, path: /v1/governance/evaluations, operations: [{name: evaluate, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: governance-automation-runtime-capability-rest
-    description: REST API for Governance Automation Runtime Capability.
+    description: REST surface for runtime governance.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: evaluate, path: /evaluate, operations: [{method: POST, name: evaluate, call: naftiko-control.evaluate}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: governance-automation-runtime-capability-mcp
-    description: MCP server exposing Governance Automation Runtime Capability for AI agents.
+    description: MCP for runtime governance.
     tools:
-    - name: example
-      description: A capability whose governance ruleset (Spectral rules, Kyverno admission control, NaftikoGovernanceFactRetriever, NaftikoScorecardCard) is wired in as the runtime for automation-of-governance thesis.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-rules, hints: {readOnly: true}, call: naftiko-control.list-rules}
+    - {name: evaluate, call: naftiko-control.evaluate}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: governance-automation-runtime-capability-skills
-    description: Agent Skill bundle for Governance Automation Runtime Capability.
+    description: Skill for runtime governance.
     skills:
     - name: governance-automation-runtime-capability
-      description: A capability whose governance ruleset (Spectral rules, Kyverno admission control, NaftikoGovernanceFactRetriever, NaftikoScorecardCard) is wired in as the runtime for automation-of-governance thesis.
+      description: Runtime governance automation.
       location: file:///opt/naftiko/skills/governance-automation-runtime-capability
-      allowed-tools: example
+      allowed-tools: list-rules,evaluate
       tools:
-      - name: example
-        description: A capability whose governance ruleset (Spectral rules, Kyverno admission control, NaftikoGovernanceFactRetriever, NaftikoScorecardCard) is wired in as the runtime for automation-of-governance thesis.
-        from:
-          sourceNamespace: governance-automation-runtime-capability-mcp
-          action: example
+      - {name: list-rules, from: {sourceNamespace: governance-automation-runtime-capability-mcp, action: list-rules}}
+      - {name: evaluate, from: {sourceNamespace: governance-automation-runtime-capability-mcp, action: evaluate}}

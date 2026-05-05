@@ -1,67 +1,61 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Gitops Ccf European Banking Capability
-  description: A capability using NaftikoCapability CRD + ArgoCD GitOps + Continuous Compliance (CCF-style) for the European-banking platform team.
-  tags:
-  - Naftiko
+  description: A capability combining GitOps deploys (Argo CD) with Continuous Compliance Framework (CCF) checks tailored for European banking regulators.
+  tags: [Naftiko, GitOps, CCF, European Banking]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: argocd-env
+  keys: {ARGOCD_HOST: ARGOCD_HOST, ARGOCD_TOKEN: ARGOCD_TOKEN}
+- namespace: ccf-env
+  keys: {CCF_HOST: CCF_HOST, CCF_TOKEN: CCF_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: argocd
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{ARGOCD_HOST}}
+    authentication: {type: bearer, token: '{{ARGOCD_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: applications, path: /api/v1/applications, operations: [{name: list-applications, method: GET}]}
+    - name: app-sync
+      path: /api/v1/applications/{{name}}/sync
       operations:
-      - name: example-op
-        method: GET
+      - {name: sync-application, method: POST, inputParameters: [{name: name, in: path}]}
+  - namespace: ccf
+    type: http
+    baseUri: https://{{CCF_HOST}}
+    authentication: {type: bearer, token: '{{CCF_TOKEN}}'}
+    resources:
+    - {name: assessments, path: /api/v1/assessments, operations: [{name: run-assessment, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: gitops-ccf-european-banking-capability-rest
-    description: REST API for Gitops Ccf European Banking Capability.
+    description: REST surface for GitOps + CCF for European banking.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: deploy-with-compliance, path: /deploy-with-compliance/{{name}}, operations: [{method: POST, name: deploy-with-compliance, inputParameters: [{name: name, in: path, type: string}], call: ccf.run-assessment}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: gitops-ccf-european-banking-capability-mcp
-    description: MCP server exposing Gitops Ccf European Banking Capability for AI agents.
+    description: MCP for GitOps + CCF.
     tools:
-    - name: example
-      description: A capability using NaftikoCapability CRD + ArgoCD GitOps + Continuous Compliance (CCF-style) for the European-banking platform team.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-apps, hints: {readOnly: true}, call: argocd.list-applications}
+    - name: deploy-with-compliance
+      inputParameters: [{name: name, type: string, required: true}]
+      call: ccf.run-assessment
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: gitops-ccf-european-banking-capability-skills
-    description: Agent Skill bundle for Gitops Ccf European Banking Capability.
+    description: Skill for GitOps + CCF.
     skills:
     - name: gitops-ccf-european-banking-capability
-      description: A capability using NaftikoCapability CRD + ArgoCD GitOps + Continuous Compliance (CCF-style) for the European-banking platform team.
+      description: GitOps + CCF for European banking.
       location: file:///opt/naftiko/skills/gitops-ccf-european-banking-capability
-      allowed-tools: example
+      allowed-tools: list-apps,deploy-with-compliance
       tools:
-      - name: example
-        description: A capability using NaftikoCapability CRD + ArgoCD GitOps + Continuous Compliance (CCF-style) for the European-banking platform team.
-        from:
-          sourceNamespace: gitops-ccf-european-banking-capability-mcp
-          action: example
+      - {name: list-apps, from: {sourceNamespace: gitops-ccf-european-banking-capability-mcp, action: list-apps}}
+      - {name: deploy-with-compliance, from: {sourceNamespace: gitops-ccf-european-banking-capability-mcp, action: deploy-with-compliance}}

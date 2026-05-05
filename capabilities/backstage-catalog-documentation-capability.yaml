@@ -1,67 +1,63 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Backstage Catalog Documentation Capability
-  description: A "documentation capability" that exposes capability metadata (specs, tags, lifecycle) via REST + MCP for Backstage catalog enrichment.
-  tags:
-  - Naftiko
+  description: A capability over Backstage that pulls catalog entities and their TechDocs and exposes them as composed documentation context for AI agents.
+  tags: [Naftiko, Backstage, TechDocs]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: backstage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: entities, path: /api/catalog/entities, operations: [{name: list-entities, method: GET}]}
+    - name: entity
+      path: /api/catalog/entities/by-name/{{kind}}/{{namespace}}/{{name}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-entity, method: GET, inputParameters: [{name: kind, in: path}, {name: namespace, in: path}, {name: name, in: path}]}
+    - name: techdocs
+      path: /api/techdocs/static/docs/{{namespace}}/{{kind}}/{{name}}/index.html
+      operations:
+      - {name: get-techdocs, method: GET, inputParameters: [{name: kind, in: path}, {name: namespace, in: path}, {name: name, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: backstage-catalog-documentation-capability-rest
-    description: REST API for Backstage Catalog Documentation Capability.
+    description: REST surface for Backstage catalog + TechDocs.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: entities, path: /entities, operations: [{method: GET, name: list-entities, call: backstage.list-entities}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: backstage-catalog-documentation-capability-mcp
-    description: MCP server exposing Backstage Catalog Documentation Capability for AI agents.
+    description: MCP for Backstage catalog/TechDocs.
     tools:
-    - name: example
-      description: A "documentation capability" that exposes capability metadata (specs, tags, lifecycle) via REST + MCP for Backstage catalog enrichment.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-entities, hints: {readOnly: true}, call: backstage.list-entities}
+    - name: get-entity
+      hints: {readOnly: true}
+      inputParameters: [{name: kind, type: string, required: true}, {name: namespace, type: string, required: true}, {name: name, type: string, required: true}]
+      call: backstage.get-entity
+    - name: get-techdocs
+      hints: {readOnly: true}
+      inputParameters: [{name: kind, type: string, required: true}, {name: namespace, type: string, required: true}, {name: name, type: string, required: true}]
+      call: backstage.get-techdocs
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: backstage-catalog-documentation-capability-skills
-    description: Agent Skill bundle for Backstage Catalog Documentation Capability.
+    description: Skill for Backstage catalog+docs context.
     skills:
     - name: backstage-catalog-documentation-capability
-      description: A "documentation capability" that exposes capability metadata (specs, tags, lifecycle) via REST + MCP for Backstage catalog enrichment.
+      description: Backstage catalog + TechDocs context for agents.
       location: file:///opt/naftiko/skills/backstage-catalog-documentation-capability
-      allowed-tools: example
+      allowed-tools: list-entities,get-entity,get-techdocs
       tools:
-      - name: example
-        description: A "documentation capability" that exposes capability metadata (specs, tags, lifecycle) via REST + MCP for Backstage catalog enrichment.
-        from:
-          sourceNamespace: backstage-catalog-documentation-capability-mcp
-          action: example
+      - {name: list-entities, from: {sourceNamespace: backstage-catalog-documentation-capability-mcp, action: list-entities}}
+      - {name: get-entity, from: {sourceNamespace: backstage-catalog-documentation-capability-mcp, action: get-entity}}
+      - {name: get-techdocs, from: {sourceNamespace: backstage-catalog-documentation-capability-mcp, action: get-techdocs}}

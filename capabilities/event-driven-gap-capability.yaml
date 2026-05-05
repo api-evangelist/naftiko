@@ -1,67 +1,66 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Event Driven Gap Capability
-  description: A capability that explicitly bridges the api/eventDriven/dataPipelines gap surfaced in Signals — wraps an existing -shaped REST API and exposes both REST + MCP with event-driven adapters layered on.
-  tags:
-  - Naftiko
+  description: A capability that fills the event-driven gap — wraps a message broker (Kafka/Solace) so consumers can browse and replay topics over REST + MCP.
+  tags: [Naftiko, Event-Driven, Kafka]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: kafka-env
+  keys: {KAFKA_REST_HOST: KAFKA_REST_HOST, KAFKA_REST_TOKEN: KAFKA_REST_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: kafka
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{KAFKA_REST_HOST}}
+    authentication: {type: bearer, token: '{{KAFKA_REST_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: topics, path: /topics, operations: [{name: list-topics, method: GET}]}
+    - name: topic
+      path: /topics/{{topic}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-topic, method: GET, inputParameters: [{name: topic, in: path}]}
+    - name: topic-records
+      path: /topics/{{topic}}/records
+      operations:
+      - {name: produce-record, method: POST, inputParameters: [{name: topic, in: path}]}
+    - name: consume
+      path: /consumers/{{group}}/instances/{{instance}}/records
+      operations:
+      - {name: consume-records, method: GET, inputParameters: [{name: group, in: path}, {name: instance, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: event-driven-gap-capability-rest
-    description: REST API for Event Driven Gap Capability.
+    description: REST surface for browsing/replaying topics.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: topics, path: /topics, operations: [{method: GET, name: list-topics, call: kafka.list-topics}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: event-driven-gap-capability-mcp
-    description: MCP server exposing Event Driven Gap Capability for AI agents.
+    description: MCP for event topics.
     tools:
-    - name: example
-      description: A capability that explicitly bridges the api/eventDriven/dataPipelines gap surfaced in Signals — wraps an existing -shaped REST API and exposes both REST + MCP with event-driven adapters layered on.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-topics, hints: {readOnly: true}, call: kafka.list-topics}
+    - name: get-topic
+      hints: {readOnly: true}
+      inputParameters: [{name: topic, type: string, required: true}]
+      call: kafka.get-topic
+    - name: produce-record
+      inputParameters: [{name: topic, type: string, required: true}]
+      call: kafka.produce-record
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: event-driven-gap-capability-skills
-    description: Agent Skill bundle for Event Driven Gap Capability.
+    description: Skill for event topics.
     skills:
     - name: event-driven-gap-capability
-      description: A capability that explicitly bridges the api/eventDriven/dataPipelines gap surfaced in Signals — wraps an existing -shaped REST API and exposes both REST + MCP with event-driven adapters layered on.
+      description: Event-driven gap capability.
       location: file:///opt/naftiko/skills/event-driven-gap-capability
-      allowed-tools: example
+      allowed-tools: list-topics,get-topic,produce-record
       tools:
-      - name: example
-        description: A capability that explicitly bridges the api/eventDriven/dataPipelines gap surfaced in Signals — wraps an existing -shaped REST API and exposes both REST + MCP with event-driven adapters layered on.
-        from:
-          sourceNamespace: event-driven-gap-capability-mcp
-          action: example
+      - {name: list-topics, from: {sourceNamespace: event-driven-gap-capability-mcp, action: list-topics}}
+      - {name: get-topic, from: {sourceNamespace: event-driven-gap-capability-mcp, action: get-topic}}
+      - {name: produce-record, from: {sourceNamespace: event-driven-gap-capability-mcp, action: produce-record}}

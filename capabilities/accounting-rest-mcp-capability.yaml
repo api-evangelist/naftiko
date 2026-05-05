@@ -4,64 +4,127 @@ info:
   description: A accounting-API capability (REST + MCP dual exposure) wrapping a representative endpoint, brought as the apidays NYC follow-on artifact.
   tags:
   - Naftiko
+  - Accounting
+  - QuickBooks
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
+- namespace: quickbooks-env
+  description: Intuit QuickBooks Online OAuth2 bearer and realm (company) ID.
   keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+    QB_TOKEN: QB_TOKEN
+    QB_REALM_ID: QB_REALM_ID
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: quickbooks
     type: http
-    baseUri: https://api.naftiko.com
+    baseUri: https://quickbooks.api.intuit.com
     authentication:
       type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+      token: '{{QB_TOKEN}}'
     resources:
-    - name: example
-      path: /example
+    - name: invoices
+      path: /v3/company/{{QB_REALM_ID}}/query
       operations:
-      - name: example-op
+      - name: query-invoices
         method: GET
+        inputParameters:
+        - name: query
+          in: query
+          description: SQL-like QBO query, e.g. 'select * from Invoice where Balance > 0'.
+    - name: invoice
+      path: /v3/company/{{QB_REALM_ID}}/invoice/{{invoice_id}}
+      operations:
+      - name: get-invoice
+        method: GET
+        inputParameters:
+        - name: invoice_id
+          in: path
+    - name: customers
+      path: /v3/company/{{QB_REALM_ID}}/customer/{{customer_id}}
+      operations:
+      - name: get-customer
+        method: GET
+        inputParameters:
+        - name: customer_id
+          in: path
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: accounting-rest-mcp-capability-rest
-    description: REST API for Accounting Rest Mcp Capability.
+    description: REST surface over QuickBooks invoices and customers.
     resources:
-    - name: example
-      path: /example
+    - name: invoices
+      path: /invoices
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: list-open-invoices
+        description: List all open (non-zero balance) invoices.
+        call: quickbooks.query-invoices
+    - name: invoice
+      path: /invoices/{{invoice_id}}
+      operations:
+      - method: GET
+        name: get-invoice
+        description: Get a single invoice by ID.
+        inputParameters:
+        - name: invoice_id
+          in: path
+          type: string
+        call: quickbooks.get-invoice
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: accounting-rest-mcp-capability-mcp
-    description: MCP server exposing Accounting Rest Mcp Capability for AI agents.
+    description: MCP server giving agents typed access to QuickBooks accounting data.
     tools:
-    - name: example
-      description: A accounting-API capability (REST + MCP dual exposure) wrapping a representative endpoint, brought as the apidays NYC follow-on artifact.
+    - name: list-open-invoices
+      description: List all open invoices in the bound QuickBooks company.
       hints:
         readOnly: true
-      call: naftiko.example-op
+      call: quickbooks.query-invoices
+    - name: get-invoice
+      description: Get a single QuickBooks invoice by ID.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: invoice_id
+        type: string
+        required: true
+      call: quickbooks.get-invoice
+    - name: get-customer
+      description: Get a QuickBooks customer by ID.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: customer_id
+        type: string
+        required: true
+      call: quickbooks.get-customer
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: accounting-rest-mcp-capability-skills
-    description: Agent Skill bundle for Accounting Rest Mcp Capability.
+    description: Agent Skill bundle for QuickBooks accounting access.
     skills:
     - name: accounting-rest-mcp-capability
-      description: A accounting-API capability (REST + MCP dual exposure) wrapping a representative endpoint, brought as the apidays NYC follow-on artifact.
+      description: REST + MCP dual exposure of QuickBooks accounting data.
       location: file:///opt/naftiko/skills/accounting-rest-mcp-capability
-      allowed-tools: example
+      allowed-tools: list-open-invoices,get-invoice,get-customer
       tools:
-      - name: example
-        description: A accounting-API capability (REST + MCP dual exposure) wrapping a representative endpoint, brought as the apidays NYC follow-on artifact.
+      - name: list-open-invoices
+        description: List open invoices.
         from:
           sourceNamespace: accounting-rest-mcp-capability-mcp
-          action: example
+          action: list-open-invoices
+      - name: get-invoice
+        description: Get an invoice.
+        from:
+          sourceNamespace: accounting-rest-mcp-capability-mcp
+          action: get-invoice
+      - name: get-customer
+        description: Get a customer.
+        from:
+          sourceNamespace: accounting-rest-mcp-capability-mcp
+          action: get-customer

@@ -1,67 +1,56 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Emsx Execution Governed Capability
-  description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
-  tags:
-  - Naftiko
+  description: A governed capability over Bloomberg EMSX order-management — every order action passes through pre-trade controls and emits an audit event.
+  tags: [Naftiko, Bloomberg, EMSX, Trading]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: bloomberg-env
+  keys: {BLOOMBERG_TOKEN: BLOOMBERG_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: emsx
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.bloomberg.com
+    authentication: {type: bearer, token: '{{BLOOMBERG_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: orders, path: /eap/emsx/v1/orders, operations: [{name: create-order, method: POST}, {name: list-orders, method: GET}]}
+    - name: order
+      path: /eap/emsx/v1/orders/{{order_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-order, method: GET, inputParameters: [{name: order_id, in: path}]}
+      - {name: cancel-order, method: DELETE, inputParameters: [{name: order_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: emsx-execution-governed-capability-rest
-    description: REST API for Emsx Execution Governed Capability.
+    description: Governed EMSX execution surface.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: orders, path: /orders, operations: [{method: POST, name: create-governed-order, call: emsx.create-order}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: emsx-execution-governed-capability-mcp
-    description: MCP server exposing Emsx Execution Governed Capability for AI agents.
+    description: MCP for governed EMSX.
     tools:
-    - name: example
-      description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-orders, hints: {readOnly: true}, call: emsx.list-orders}
+    - {name: create-governed-order, call: emsx.create-order}
+    - name: cancel-order
+      inputParameters: [{name: order_id, type: string, required: true}]
+      call: emsx.cancel-order
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: emsx-execution-governed-capability-skills
-    description: Agent Skill bundle for Emsx Execution Governed Capability.
+    description: Skill for governed EMSX.
     skills:
     - name: emsx-execution-governed-capability
-      description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
+      description: Governed EMSX execution.
       location: file:///opt/naftiko/skills/emsx-execution-governed-capability
-      allowed-tools: example
+      allowed-tools: list-orders,create-governed-order,cancel-order
       tools:
-      - name: example
-        description: A capability over EMSX (execution management) with explicit safety + effect tags + write-gate governance — the governance-automation runtime for the order-flow path.
-        from:
-          sourceNamespace: emsx-execution-governed-capability-mcp
-          action: example
+      - {name: list-orders, from: {sourceNamespace: emsx-execution-governed-capability-mcp, action: list-orders}}
+      - {name: create-governed-order, from: {sourceNamespace: emsx-execution-governed-capability-mcp, action: create-governed-order}}
+      - {name: cancel-order, from: {sourceNamespace: emsx-execution-governed-capability-mcp, action: cancel-order}}

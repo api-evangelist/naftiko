@@ -1,67 +1,61 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Azure Devops Pipeline To Backstage Entity
-  description: A capability that ingests Azure DevOps build + release events and auto-fills Backstage entity TechDocs/CI annotations for the relevant service.
-  tags:
-  - Naftiko
+  description: A capability that mirrors Azure DevOps build pipelines into Backstage as TechDocs entities, so platform engineers can browse pipelines without leaving the developer portal.
+  tags: [Naftiko, Azure DevOps, Backstage]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: azuredevops-env
+  keys: {AZDO_ORG: AZDO_ORG, AZDO_PROJECT: AZDO_PROJECT, AZDO_TOKEN: AZDO_TOKEN}
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: azuredevops
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://dev.azure.com
+    authentication: {type: bearer, token: '{{AZDO_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: pipelines
+      path: /{{AZDO_ORG}}/{{AZDO_PROJECT}}/_apis/pipelines
+      operations: [{name: list-pipelines, method: GET}]
+    - name: pipeline
+      path: /{{AZDO_ORG}}/{{AZDO_PROJECT}}/_apis/pipelines/{{pipeline_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-pipeline, method: GET, inputParameters: [{name: pipeline_id, in: path}]}
+  - namespace: backstage
+    type: http
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
+    resources:
+    - {name: catalog-entities, path: /api/catalog/entities, operations: [{name: upsert-entity, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: azure-devops-pipeline-to-backstage-entity-rest
-    description: REST API for Azure Devops Pipeline To Backstage Entity.
+    description: REST surface mirroring Azure DevOps pipelines into Backstage.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: sync, path: /sync, operations: [{method: POST, name: sync-pipelines, description: Pull all Azure DevOps pipelines and upsert as Backstage entities., call: azuredevops.list-pipelines}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: azure-devops-pipeline-to-backstage-entity-mcp
-    description: MCP server exposing Azure Devops Pipeline To Backstage Entity for AI agents.
+    description: MCP for pipeline-to-Backstage sync.
     tools:
-    - name: example
-      description: A capability that ingests Azure DevOps build + release events and auto-fills Backstage entity TechDocs/CI annotations for the relevant service.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-azdo-pipelines, hints: {readOnly: true}, call: azuredevops.list-pipelines}
+    - {name: sync-pipelines, call: azuredevops.list-pipelines}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: azure-devops-pipeline-to-backstage-entity-skills
-    description: Agent Skill bundle for Azure Devops Pipeline To Backstage Entity.
+    description: Skill bundle for AzDO→Backstage sync.
     skills:
     - name: azure-devops-pipeline-to-backstage-entity
-      description: A capability that ingests Azure DevOps build + release events and auto-fills Backstage entity TechDocs/CI annotations for the relevant service.
+      description: Mirror Azure DevOps pipelines as Backstage entities.
       location: file:///opt/naftiko/skills/azure-devops-pipeline-to-backstage-entity
-      allowed-tools: example
+      allowed-tools: list-azdo-pipelines,sync-pipelines
       tools:
-      - name: example
-        description: A capability that ingests Azure DevOps build + release events and auto-fills Backstage entity TechDocs/CI annotations for the relevant service.
-        from:
-          sourceNamespace: azure-devops-pipeline-to-backstage-entity-mcp
-          action: example
+      - {name: list-azdo-pipelines, from: {sourceNamespace: azure-devops-pipeline-to-backstage-entity-mcp, action: list-azdo-pipelines}}
+      - {name: sync-pipelines, from: {sourceNamespace: azure-devops-pipeline-to-backstage-entity-mcp, action: sync-pipelines}}

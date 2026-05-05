@@ -4,64 +4,117 @@ info:
   description: A single capability used as the running example in framework-wiki Tutorial-Part-1, with the AI Assistance angle (AGENT.md, SKILL.md prompts) highlighted.
   tags:
   - Naftiko
+  - Tutorial
+  - AGENTS.md
+  - Skill
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
+- namespace: github-env
+  description: GitHub token for fetching AGENTS.md and SKILL.md from a repo.
   keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+    GITHUB_TOKEN: GITHUB_TOKEN
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
     type: http
-    baseUri: https://api.naftiko.com
+    baseUri: https://api.github.com
     authentication:
       type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+      token: '{{GITHUB_TOKEN}}'
     resources:
-    - name: example
-      path: /example
+    - name: agents-md
+      path: /repos/{{owner}}/{{repo}}/contents/AGENTS.md
       operations:
-      - name: example-op
+      - name: get-agents-md
         method: GET
+        inputParameters:
+        - name: owner
+          in: path
+        - name: repo
+          in: path
+    - name: skill-md
+      path: /repos/{{owner}}/{{repo}}/contents/.claude/skills/{{skill}}/SKILL.md
+      operations:
+      - name: get-skill-md
+        method: GET
+        inputParameters:
+        - name: owner
+          in: path
+        - name: repo
+          in: path
+        - name: skill
+          in: path
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: agent-md-skill-md-tutorial-capability-rest
-    description: REST API for Agent Md Skill Md Tutorial Capability.
+    description: REST surface that returns AGENTS.md + SKILL.md content as a tutorial example.
     resources:
-    - name: example
-      path: /example
+    - name: agent-context
+      path: /agent-context/{{owner}}/{{repo}}
       operations:
       - method: GET
-        name: example-op
-        call: naftiko.example-op
+        name: get-agent-context
+        description: Return AGENTS.md and any SKILL.md files for a repo as combined agent prompt context.
+        inputParameters:
+        - name: owner
+          in: path
+          type: string
+        - name: repo
+          in: path
+          type: string
+        call: github.get-agents-md
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: agent-md-skill-md-tutorial-capability-mcp
-    description: MCP server exposing Agent Md Skill Md Tutorial Capability for AI agents.
+    description: MCP server exposing AGENTS.md + SKILL.md retrieval as agent tools.
     tools:
-    - name: example
-      description: A single capability used as the running example in framework-wiki Tutorial-Part-1, with the AI Assistance angle (AGENT.md, SKILL.md prompts) highlighted.
+    - name: get-agents-md
+      description: Fetch a repo's AGENTS.md.
       hints:
         readOnly: true
-      call: naftiko.example-op
+      inputParameters:
+      - name: owner
+        type: string
+        required: true
+      - name: repo
+        type: string
+        required: true
+      call: github.get-agents-md
+    - name: get-skill-md
+      description: Fetch a SKILL.md for a named skill in a repo.
+      hints:
+        readOnly: true
+      inputParameters:
+      - name: owner
+        type: string
+        required: true
+      - name: repo
+        type: string
+        required: true
+      - name: skill
+        type: string
+        required: true
+      call: github.get-skill-md
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: agent-md-skill-md-tutorial-capability-skills
-    description: Agent Skill bundle for Agent Md Skill Md Tutorial Capability.
+    description: Tutorial Skill bundle showing AGENTS.md / SKILL.md retrieval.
     skills:
     - name: agent-md-skill-md-tutorial-capability
-      description: A single capability used as the running example in framework-wiki Tutorial-Part-1, with the AI Assistance angle (AGENT.md, SKILL.md prompts) highlighted.
+      description: Tutorial example reading AGENTS.md and SKILL.md from a repo.
       location: file:///opt/naftiko/skills/agent-md-skill-md-tutorial-capability
-      allowed-tools: example
+      allowed-tools: get-agents-md,get-skill-md
       tools:
-      - name: example
-        description: A single capability used as the running example in framework-wiki Tutorial-Part-1, with the AI Assistance angle (AGENT.md, SKILL.md prompts) highlighted.
+      - name: get-agents-md
         from:
           sourceNamespace: agent-md-skill-md-tutorial-capability-mcp
-          action: example
+          action: get-agents-md
+      - name: get-skill-md
+        from:
+          sourceNamespace: agent-md-skill-md-tutorial-capability-mcp
+          action: get-skill-md

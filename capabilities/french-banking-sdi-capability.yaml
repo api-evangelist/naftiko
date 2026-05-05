@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: French Banking Sdi Capability
-  description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
-  tags:
-  - Naftiko
+  description: A capability over the French Service Discovery Integration (SDI) for banking — AsyncAPI/OpenAPI service registry exposed through Naftiko.
+  tags: [Naftiko, French Banking, SDI]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: sdi-env
+  keys: {SDI_HOST: SDI_HOST, SDI_TOKEN: SDI_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: sdi
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SDI_HOST}}
+    authentication: {type: bearer, token: '{{SDI_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: services, path: /sdi/services, operations: [{name: list-services, method: GET}]}
+    - name: service-spec
+      path: /sdi/services/{{service_id}}/spec
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-service-spec, method: GET, inputParameters: [{name: service_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: french-banking-sdi-capability-rest
-    description: REST API for French Banking Sdi Capability.
+    description: REST surface for French banking SDI.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: services, path: /services, operations: [{method: GET, name: list-services, call: sdi.list-services}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: french-banking-sdi-capability-mcp
-    description: MCP server exposing French Banking Sdi Capability for AI agents.
+    description: MCP for French banking SDI.
     tools:
-    - name: example
-      description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-services, hints: {readOnly: true}, call: sdi.list-services}
+    - name: get-service-spec
+      hints: {readOnly: true}
+      inputParameters: [{name: service_id, type: string, required: true}]
+      call: sdi.get-service-spec
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: french-banking-sdi-capability-skills
-    description: Agent Skill bundle for French Banking Sdi Capability.
+    description: Skill for French banking SDI.
     skills:
     - name: french-banking-sdi-capability
-      description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
+      description: French banking SDI registry.
       location: file:///opt/naftiko/skills/french-banking-sdi-capability
-      allowed-tools: example
+      allowed-tools: list-services,get-service-spec
       tools:
-      - name: example
-        description: A French-banking capability with SDI methodology language in the spec, paired with a Compliance Frameworks (GDPR) governance layer.
-        from:
-          sourceNamespace: french-banking-sdi-capability-mcp
-          action: example
+      - {name: list-services, from: {sourceNamespace: french-banking-sdi-capability-mcp, action: list-services}}
+      - {name: get-service-spec, from: {sourceNamespace: french-banking-sdi-capability-mcp, action: get-service-spec}}

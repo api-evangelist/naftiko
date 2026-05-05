@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Backstage Scaffolding Standard
-  description: A capability scaffolded from a Backstage template, intended as the "scaffolding standard a P&G enterprise-integration org could mandate."
-  tags:
-  - Naftiko
+  description: A standard capability documenting the Naftiko Backstage scaffolding contract — required template inputs, naming, registry path.
+  tags: [Naftiko, Backstage, Standard]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: backstage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: templates, path: /api/scaffolder/v2/templates, operations: [{name: list-templates, method: GET}]}
+    - name: template
+      path: /api/scaffolder/v2/templates/{{namespace}}/{{name}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-template, method: GET, inputParameters: [{name: namespace, in: path}, {name: name, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: backstage-scaffolding-standard-rest
-    description: REST API for Backstage Scaffolding Standard.
+    description: REST surface exposing the scaffolding standard's templates.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: templates, path: /templates, operations: [{method: GET, name: list-templates, call: backstage.list-templates}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: backstage-scaffolding-standard-mcp
-    description: MCP server exposing Backstage Scaffolding Standard for AI agents.
+    description: MCP exposing the scaffolding standard.
     tools:
-    - name: example
-      description: A capability scaffolded from a Backstage template, intended as the "scaffolding standard a P&G enterprise-integration org could mandate."
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-templates, hints: {readOnly: true}, call: backstage.list-templates}
+    - name: get-template
+      hints: {readOnly: true}
+      inputParameters: [{name: namespace, type: string, required: true}, {name: name, type: string, required: true}]
+      call: backstage.get-template
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: backstage-scaffolding-standard-skills
-    description: Agent Skill bundle for Backstage Scaffolding Standard.
+    description: Skill for the scaffolding standard.
     skills:
     - name: backstage-scaffolding-standard
-      description: A capability scaffolded from a Backstage template, intended as the "scaffolding standard a P&G enterprise-integration org could mandate."
+      description: Naftiko Backstage scaffolding standard.
       location: file:///opt/naftiko/skills/backstage-scaffolding-standard
-      allowed-tools: example
+      allowed-tools: list-templates,get-template
       tools:
-      - name: example
-        description: A capability scaffolded from a Backstage template, intended as the "scaffolding standard a P&G enterprise-integration org could mandate."
-        from:
-          sourceNamespace: backstage-scaffolding-standard-mcp
-          action: example
+      - {name: list-templates, from: {sourceNamespace: backstage-scaffolding-standard-mcp, action: list-templates}}
+      - {name: get-template, from: {sourceNamespace: backstage-scaffolding-standard-mcp, action: get-template}}

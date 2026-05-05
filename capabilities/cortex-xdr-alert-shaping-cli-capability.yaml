@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Cortex Xdr Alert Shaping Cli Capability
-  description: A CLI-runnable capability wrapping the Cortex XDR alerts API, returning a shaped agent context object — designed to bypass the Docker container startup blocker.
-  tags:
-  - Naftiko
+  description: A CLI-driven capability over Palo Alto Cortex XDR that fetches alerts, shapes them for analyst triage, and exposes the shaped feed.
+  tags: [Naftiko, Cortex XDR, Security]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: cortex-env
+  keys: {CORTEX_HOST: CORTEX_HOST, CORTEX_API_KEY: CORTEX_API_KEY, CORTEX_API_KEY_ID: CORTEX_API_KEY_ID}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: cortex
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{CORTEX_HOST}}
+    authentication: {type: bearer, token: '{{CORTEX_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: alerts, path: /public_api/v1/alerts/get_alerts_multi_events, operations: [{name: get-alerts, method: POST}]}
+    - {name: incidents, path: /public_api/v1/incidents/get_incidents, operations: [{name: get-incidents, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: cortex-xdr-alert-shaping-cli-capability-rest
-    description: REST API for Cortex Xdr Alert Shaping Cli Capability.
+    description: REST surface for shaped Cortex XDR alerts.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: alerts, path: /alerts, operations: [{method: GET, name: get-shaped-alerts, call: cortex.get-alerts}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: cortex-xdr-alert-shaping-cli-capability-mcp
-    description: MCP server exposing Cortex Xdr Alert Shaping Cli Capability for AI agents.
+    description: MCP for shaped Cortex XDR alerts.
     tools:
-    - name: example
-      description: A CLI-runnable capability wrapping the Cortex XDR alerts API, returning a shaped agent context object — designed to bypass the Docker container startup blocker.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-shaped-alerts, hints: {readOnly: true}, call: cortex.get-alerts}
+    - {name: get-incidents, hints: {readOnly: true}, call: cortex.get-incidents}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: cortex-xdr-alert-shaping-cli-capability-skills
-    description: Agent Skill bundle for Cortex Xdr Alert Shaping Cli Capability.
+    description: Skill for shaped Cortex XDR alerts.
     skills:
     - name: cortex-xdr-alert-shaping-cli-capability
-      description: A CLI-runnable capability wrapping the Cortex XDR alerts API, returning a shaped agent context object — designed to bypass the Docker container startup blocker.
+      description: Shaped Cortex XDR alerts for analyst triage.
       location: file:///opt/naftiko/skills/cortex-xdr-alert-shaping-cli-capability
-      allowed-tools: example
+      allowed-tools: get-shaped-alerts,get-incidents
       tools:
-      - name: example
-        description: A CLI-runnable capability wrapping the Cortex XDR alerts API, returning a shaped agent context object — designed to bypass the Docker container startup blocker.
-        from:
-          sourceNamespace: cortex-xdr-alert-shaping-cli-capability-mcp
-          action: example
+      - {name: get-shaped-alerts, from: {sourceNamespace: cortex-xdr-alert-shaping-cli-capability-mcp, action: get-shaped-alerts}}
+      - {name: get-incidents, from: {sourceNamespace: cortex-xdr-alert-shaping-cli-capability-mcp, action: get-incidents}}

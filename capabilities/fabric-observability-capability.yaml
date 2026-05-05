@@ -1,67 +1,55 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Fabric Observability Capability
-  description: A capability wired into Cross-Engine Observability Dashboards + Federation Across Fabrics, used to argue the fabric-wide visibility story.
-  tags:
-  - Naftiko
+  description: A capability surfacing Microsoft Fabric workspace metrics (capacity, item run state) as observability tools.
+  tags: [Naftiko, Microsoft Fabric, Observability]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: fabric-env
+  keys: {FABRIC_TOKEN: FABRIC_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: fabric
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.fabric.microsoft.com
+    authentication: {type: bearer, token: '{{FABRIC_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: capacities, path: /v1/capacities, operations: [{name: list-capacities, method: GET}]}
+    - name: capacity-metrics
+      path: /v1/capacities/{{capacity_id}}/metrics
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-capacity-metrics, method: GET, inputParameters: [{name: capacity_id, in: path}]}
+    - {name: item-jobs, path: /v1/workspaces/{{workspace_id}}/items/{{item_id}}/jobs/instances, operations: [{name: list-item-jobs, method: GET, inputParameters: [{name: workspace_id, in: path}, {name: item_id, in: path}]}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: fabric-observability-capability-rest
-    description: REST API for Fabric Observability Capability.
+    description: REST surface for Fabric observability.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: capacity-metrics, path: /capacities/{{capacity_id}}/metrics, operations: [{method: GET, name: get-capacity-metrics, inputParameters: [{name: capacity_id, in: path, type: string}], call: fabric.get-capacity-metrics}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: fabric-observability-capability-mcp
-    description: MCP server exposing Fabric Observability Capability for AI agents.
+    description: MCP for Fabric observability.
     tools:
-    - name: example
-      description: A capability wired into Cross-Engine Observability Dashboards + Federation Across Fabrics, used to argue the fabric-wide visibility story.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-capacities, hints: {readOnly: true}, call: fabric.list-capacities}
+    - name: get-capacity-metrics
+      hints: {readOnly: true}
+      inputParameters: [{name: capacity_id, type: string, required: true}]
+      call: fabric.get-capacity-metrics
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: fabric-observability-capability-skills
-    description: Agent Skill bundle for Fabric Observability Capability.
+    description: Skill for Fabric observability.
     skills:
     - name: fabric-observability-capability
-      description: A capability wired into Cross-Engine Observability Dashboards + Federation Across Fabrics, used to argue the fabric-wide visibility story.
+      description: Microsoft Fabric observability.
       location: file:///opt/naftiko/skills/fabric-observability-capability
-      allowed-tools: example
+      allowed-tools: list-capacities,get-capacity-metrics
       tools:
-      - name: example
-        description: A capability wired into Cross-Engine Observability Dashboards + Federation Across Fabrics, used to argue the fabric-wide visibility story.
-        from:
-          sourceNamespace: fabric-observability-capability-mcp
-          action: example
+      - {name: list-capacities, from: {sourceNamespace: fabric-observability-capability-mcp, action: list-capacities}}
+      - {name: get-capacity-metrics, from: {sourceNamespace: fabric-observability-capability-mcp, action: get-capacity-metrics}}

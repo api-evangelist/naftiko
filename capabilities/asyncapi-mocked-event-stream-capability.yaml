@@ -1,67 +1,60 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Asyncapi Mocked Event Stream Capability
-  description: A capability where mocks an AsyncAPI-described event stream and the same YAML drives the Naftiko engine's consume side, joining capability + event-driven mocking on one artifact.
-  tags:
-  - Naftiko
+  description: A capability that turns an AsyncAPI document into a mocked event stream usable as REST-poll + MCP tools, so consumers can develop against a contract before broker access exists.
+  tags: [Naftiko, AsyncAPI, Mocking]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-mock
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - name: asyncapi-mocks
+      path: /v1/asyncapi-mocks
       operations:
-      - name: example-op
-        method: GET
+      - {name: create-asyncapi-mock, method: POST, description: Create a mocked event stream from an AsyncAPI doc.}
+    - name: stream-events
+      path: /v1/asyncapi-mocks/{{mock_id}}/events
+      operations:
+      - {name: poll-events, method: GET, inputParameters: [{name: mock_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: asyncapi-mocked-event-stream-capability-rest
-    description: REST API for Asyncapi Mocked Event Stream Capability.
+    description: REST-poll surface over mocked AsyncAPI event streams.
     resources:
-    - name: example
-      path: /example
+    - name: poll
+      path: /streams/{{mock_id}}/events
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: poll-events, inputParameters: [{name: mock_id, in: path, type: string}], call: naftiko-mock.poll-events}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: asyncapi-mocked-event-stream-capability-mcp
-    description: MCP server exposing Asyncapi Mocked Event Stream Capability for AI agents.
+    description: MCP exposing AsyncAPI mock streams.
     tools:
-    - name: example
-      description: A capability where mocks an AsyncAPI-described event stream and the same YAML drives the Naftiko engine's consume side, joining capability + event-driven mocking on one artifact.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: create-asyncapi-mock, call: naftiko-mock.create-asyncapi-mock}
+    - name: poll-events
+      hints: {readOnly: true}
+      inputParameters: [{name: mock_id, type: string, required: true}]
+      call: naftiko-mock.poll-events
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: asyncapi-mocked-event-stream-capability-skills
-    description: Agent Skill bundle for Asyncapi Mocked Event Stream Capability.
+    description: Skill bundle for AsyncAPI mock streams.
     skills:
     - name: asyncapi-mocked-event-stream-capability
-      description: A capability where mocks an AsyncAPI-described event stream and the same YAML drives the Naftiko engine's consume side, joining capability + event-driven mocking on one artifact.
+      description: AsyncAPI mocked event stream consumption.
       location: file:///opt/naftiko/skills/asyncapi-mocked-event-stream-capability
-      allowed-tools: example
+      allowed-tools: create-asyncapi-mock,poll-events
       tools:
-      - name: example
-        description: A capability where mocks an AsyncAPI-described event stream and the same YAML drives the Naftiko engine's consume side, joining capability + event-driven mocking on one artifact.
-        from:
-          sourceNamespace: asyncapi-mocked-event-stream-capability-mcp
-          action: example
+      - {name: create-asyncapi-mock, from: {sourceNamespace: asyncapi-mocked-event-stream-capability-mcp, action: create-asyncapi-mock}}
+      - {name: poll-events, from: {sourceNamespace: asyncapi-mocked-event-stream-capability-mcp, action: poll-events}}
