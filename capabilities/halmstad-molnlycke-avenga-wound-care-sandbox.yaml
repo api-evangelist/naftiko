@@ -17,7 +17,7 @@ capability:
     resources:
     - {name: wound-images, path: /api/v1/wound-images, operations: [{name: upload-wound-image, method: POST}]}
     - name: wound-assessment
-      path: /api/v1/wound-images/{{image_id}}/assessment
+      path: '/api/v1/wound-images/{{image_id}}/assessment'
       operations:
       - {name: get-wound-assessment, method: GET, inputParameters: [{name: image_id, in: path}]}
   exposes:
@@ -27,7 +27,7 @@ capability:
     namespace: halmstad-molnlycke-avenga-wound-care-sandbox-rest
     description: Sandbox REST surface for wound-care.
     resources:
-    - {name: assessments, path: /assessments/{{image_id}}, operations: [{method: GET, name: get-wound-assessment, inputParameters: [{name: image_id, in: path, type: string}], call: molnlycke.get-wound-assessment}]}
+    - {name: assessments, path: '/assessments/{{image_id}}', operations: [{method: GET, name: get-wound-assessment, inputParameters: [{name: image_id, in: path, type: string}], call: molnlycke.get-wound-assessment}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

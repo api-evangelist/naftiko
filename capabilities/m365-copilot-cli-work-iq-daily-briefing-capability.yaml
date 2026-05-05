@@ -1,67 +1,58 @@
 naftiko: 1.0.0-alpha2
 info:
-  title: M365 Copilot Cli Work Iq Daily Briefing Capability
-  description: A capability that wraps Work IQ as an MCP tool consumed from the Copilot CLI to produce a daily "what changed that impacts my work" briefing across meetings, chats, emails, and tasks.
-  tags:
-  - Naftiko
+  title: M365 Copilot CLI Work IQ Daily Briefing Capability
+  description: A Microsoft 365 capability over Microsoft Graph that exposes a shaped subset of M365 data for AI agents (Copilot, ADK).
+  tags: [Naftiko, Microsoft 365, Graph]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: msgraph-env
+  description: Microsoft Graph OAuth bearer (delegated or app-only).
+  keys: {MSGRAPH_TOKEN: MSGRAPH_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: msgraph
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://graph.microsoft.com
+    authentication: {type: bearer, token: '{{MSGRAPH_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: me, path: /v1.0/me, operations: [{name: get-me, method: GET}]}
+    - {name: messages, path: /v1.0/me/messages, operations: [{name: list-messages, method: GET}]}
+    - {name: events, path: /v1.0/me/events, operations: [{name: list-events, method: GET}]}
+    - {name: chats, path: /v1.0/me/chats, operations: [{name: list-chats, method: GET}]}
+    - {name: drive-items, path: /v1.0/me/drive/root/children, operations: [{name: list-drive-items, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: m365-copilot-cli-work-iq-daily-briefing-capability-rest
-    description: REST API for M365 Copilot Cli Work Iq Daily Briefing Capability.
+    description: REST surface over a shaped Microsoft Graph subset.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: me, path: /me, operations: [{method: GET, name: get-me, call: msgraph.get-me}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp
-    description: MCP server exposing M365 Copilot Cli Work Iq Daily Briefing Capability for AI agents.
+    description: MCP for shaped M365 access.
     tools:
-    - name: example
-      description: A capability that wraps Work IQ as an MCP tool consumed from the Copilot CLI to produce a daily "what changed that impacts my work" briefing across meetings, chats, emails, and tasks.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-me, hints: {readOnly: true}, call: msgraph.get-me}
+    - {name: list-messages, hints: {readOnly: true}, call: msgraph.list-messages}
+    - {name: list-events, hints: {readOnly: true}, call: msgraph.list-events}
+    - {name: list-chats, hints: {readOnly: true}, call: msgraph.list-chats}
+    - {name: list-drive-items, hints: {readOnly: true}, call: msgraph.list-drive-items}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: m365-copilot-cli-work-iq-daily-briefing-capability-skills
-    description: Agent Skill bundle for M365 Copilot Cli Work Iq Daily Briefing Capability.
+    description: Skill bundle for shaped M365 access.
     skills:
     - name: m365-copilot-cli-work-iq-daily-briefing-capability
-      description: A capability that wraps Work IQ as an MCP tool consumed from the Copilot CLI to produce a daily "what changed that impacts my work" briefing across meetings, chats, emails, and tasks.
+      description: Shaped Microsoft Graph capability.
       location: file:///opt/naftiko/skills/m365-copilot-cli-work-iq-daily-briefing-capability
-      allowed-tools: example
+      allowed-tools: get-me,list-messages,list-events,list-chats,list-drive-items
       tools:
-      - name: example
-        description: A capability that wraps Work IQ as an MCP tool consumed from the Copilot CLI to produce a daily "what changed that impacts my work" briefing across meetings, chats, emails, and tasks.
-        from:
-          sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp
-          action: example
+      - {name: get-me, from: {sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp, action: get-me}}
+      - {name: list-messages, from: {sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp, action: list-messages}}
+      - {name: list-events, from: {sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp, action: list-events}}
+      - {name: list-chats, from: {sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp, action: list-chats}}
+      - {name: list-drive-items, from: {sourceNamespace: m365-copilot-cli-work-iq-daily-briefing-capability-mcp, action: list-drive-items}}

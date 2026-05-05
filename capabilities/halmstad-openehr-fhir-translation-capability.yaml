@@ -18,7 +18,7 @@ capability:
     authentication: {type: bearer, token: '{{OPENEHR_TOKEN}}'}
     resources:
     - name: composition
-      path: /rest/v1/composition/{{composition_id}}
+      path: '/rest/v1/composition/{{composition_id}}'
       operations:
       - {name: get-openehr-composition, method: GET, inputParameters: [{name: composition_id, in: path}]}
   - namespace: fhir
@@ -27,7 +27,7 @@ capability:
     authentication: {type: bearer, token: '{{FHIR_TOKEN}}'}
     resources:
     - name: observation
-      path: /Observation/{{id}}
+      path: '/Observation/{{id}}'
       operations:
       - {name: get-fhir-observation, method: GET, inputParameters: [{name: id, in: path}]}
   exposes:
@@ -37,7 +37,7 @@ capability:
     namespace: halmstad-openehr-fhir-translation-capability-rest
     description: REST surface for openEHR↔FHIR translation.
     resources:
-    - {name: translate, path: /translate/openehr-to-fhir/{{composition_id}}, operations: [{method: GET, name: translate-openehr-to-fhir, inputParameters: [{name: composition_id, in: path, type: string}], call: openehr.get-openehr-composition}]}
+    - {name: translate, path: '/translate/openehr-to-fhir/{{composition_id}}', operations: [{method: GET, name: translate-openehr-to-fhir, inputParameters: [{name: composition_id, in: path, type: string}], call: openehr.get-openehr-composition}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

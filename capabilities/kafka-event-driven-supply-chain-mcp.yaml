@@ -1,67 +1,62 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Kafka Event Driven Supply Chain Mcp
-  description: A capability over a P&G Kafka topic family (supply-chain events) exposing typed event reads as MCP tools for AI ops assistants.
-  tags:
-  - Naftiko
+  description: A capability over Kafka topics for supply-chain events (order, shipment, exception) exposed as MCP tools for agent flows.
+  tags: [Naftiko, Kafka, Supply Chain]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: kafka-env
+  keys: {KAFKA_REST_HOST: KAFKA_REST_HOST, KAFKA_REST_TOKEN: KAFKA_REST_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: kafka
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{KAFKA_REST_HOST}}
+    authentication: {type: bearer, token: '{{KAFKA_REST_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: order-events
+      path: /topics/orders/records
+      operations: [{name: produce-order-event, method: POST}]
+    - name: shipment-events
+      path: /topics/shipments/records
+      operations: [{name: produce-shipment-event, method: POST}]
+    - name: consumer-records
+      path: /consumers/{{group}}/instances/{{instance}}/records
       operations:
-      - name: example-op
-        method: GET
+      - {name: consume-records, method: GET, inputParameters: [{name: group, in: path}, {name: instance, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: kafka-event-driven-supply-chain-mcp-rest
-    description: REST API for Kafka Event Driven Supply Chain Mcp.
+    description: REST surface for supply-chain events.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: orders, path: /events/orders, operations: [{method: POST, name: emit-order, call: kafka.produce-order-event}]}
+    - {name: shipments, path: /events/shipments, operations: [{method: POST, name: emit-shipment, call: kafka.produce-shipment-event}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: kafka-event-driven-supply-chain-mcp-mcp
-    description: MCP server exposing Kafka Event Driven Supply Chain Mcp for AI agents.
+    description: MCP for supply-chain events.
     tools:
-    - name: example
-      description: A capability over a P&G Kafka topic family (supply-chain events) exposing typed event reads as MCP tools for AI ops assistants.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: emit-order, call: kafka.produce-order-event}
+    - {name: emit-shipment, call: kafka.produce-shipment-event}
+    - name: consume-events
+      hints: {readOnly: true}
+      inputParameters: [{name: group, type: string, required: true}, {name: instance, type: string, required: true}]
+      call: kafka.consume-records
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: kafka-event-driven-supply-chain-mcp-skills
-    description: Agent Skill bundle for Kafka Event Driven Supply Chain Mcp.
+    description: Skill for supply-chain events.
     skills:
     - name: kafka-event-driven-supply-chain-mcp
-      description: A capability over a P&G Kafka topic family (supply-chain events) exposing typed event reads as MCP tools for AI ops assistants.
+      description: Kafka supply-chain events.
       location: file:///opt/naftiko/skills/kafka-event-driven-supply-chain-mcp
-      allowed-tools: example
+      allowed-tools: emit-order,emit-shipment,consume-events
       tools:
-      - name: example
-        description: A capability over a P&G Kafka topic family (supply-chain events) exposing typed event reads as MCP tools for AI ops assistants.
-        from:
-          sourceNamespace: kafka-event-driven-supply-chain-mcp-mcp
-          action: example
+      - {name: emit-order, from: {sourceNamespace: kafka-event-driven-supply-chain-mcp-mcp, action: emit-order}}
+      - {name: emit-shipment, from: {sourceNamespace: kafka-event-driven-supply-chain-mcp-mcp, action: emit-shipment}}
+      - {name: consume-events, from: {sourceNamespace: kafka-event-driven-supply-chain-mcp-mcp, action: consume-events}}

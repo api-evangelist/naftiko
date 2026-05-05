@@ -16,11 +16,11 @@ capability:
     authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
     resources:
     - name: repo
-      path: /repos/{{owner}}/{{repo}}
+      path: '/repos/{{owner}}/{{repo}}'
       operations:
       - {name: get-repo, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
     - name: issues
-      path: /repos/{{owner}}/{{repo}}/issues
+      path: '/repos/{{owner}}/{{repo}}/issues'
       operations:
       - {name: list-issues, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
   exposes:
@@ -30,7 +30,7 @@ capability:
     namespace: github-mcp-vs-sdk-side-by-side-rest
     description: REST surface for the MCP-vs-SDK comparison.
     resources:
-    - {name: repo, path: /compare/{{owner}}/{{repo}}, operations: [{method: GET, name: get-repo-side-by-side, inputParameters: [{name: owner, in: path, type: string}, {name: repo, in: path, type: string}], call: github.get-repo}]}
+    - {name: repo, path: '/compare/{{owner}}/{{repo}}', operations: [{method: GET, name: get-repo-side-by-side, inputParameters: [{name: owner, in: path, type: string}, {name: repo, in: path, type: string}], call: github.get-repo}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

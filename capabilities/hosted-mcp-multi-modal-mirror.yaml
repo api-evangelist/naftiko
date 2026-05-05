@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Hosted Mcp Multi Modal Mirror
-  description: A capability that mirrors a object across REST + GraphQL + hosted MCP and exposes the same agent surface so governance lives in one OpenAPI doc — Kris's exact methodology argument.
-  tags:
-  - Naftiko
+  description: A capability that mirrors a Naftiko-hosted MCP server across multiple agent surfaces (Claude, Copilot, ADK) so the same tools are reachable everywhere.
+  tags: [Naftiko, MCP, Multi-Modal]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: mcp-servers, path: /v1/mcp-servers, operations: [{name: list-mcp-servers, method: GET}]}
+    - name: mcp-server
+      path: /v1/mcp-servers/{{server_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-mcp-server, method: GET, inputParameters: [{name: server_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: hosted-mcp-multi-modal-mirror-rest
-    description: REST API for Hosted Mcp Multi Modal Mirror.
+    description: REST surface for hosted MCP mirror.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: servers, path: /servers, operations: [{method: GET, name: list-mirrored-servers, call: naftiko-control.list-mcp-servers}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: hosted-mcp-multi-modal-mirror-mcp
-    description: MCP server exposing Hosted Mcp Multi Modal Mirror for AI agents.
+    description: MCP for the hosted mirror.
     tools:
-    - name: example
-      description: A capability that mirrors a object across REST + GraphQL + hosted MCP and exposes the same agent surface so governance lives in one OpenAPI doc — Kris's exact methodology argument.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-mirrored-servers, hints: {readOnly: true}, call: naftiko-control.list-mcp-servers}
+    - name: get-server
+      hints: {readOnly: true}
+      inputParameters: [{name: server_id, type: string, required: true}]
+      call: naftiko-control.get-mcp-server
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: hosted-mcp-multi-modal-mirror-skills
-    description: Agent Skill bundle for Hosted Mcp Multi Modal Mirror.
+    description: Skill for hosted MCP mirror.
     skills:
     - name: hosted-mcp-multi-modal-mirror
-      description: A capability that mirrors a object across REST + GraphQL + hosted MCP and exposes the same agent surface so governance lives in one OpenAPI doc — Kris's exact methodology argument.
+      description: Hosted MCP multi-modal mirror.
       location: file:///opt/naftiko/skills/hosted-mcp-multi-modal-mirror
-      allowed-tools: example
+      allowed-tools: list-mirrored-servers,get-server
       tools:
-      - name: example
-        description: A capability that mirrors a object across REST + GraphQL + hosted MCP and exposes the same agent surface so governance lives in one OpenAPI doc — Kris's exact methodology argument.
-        from:
-          sourceNamespace: hosted-mcp-multi-modal-mirror-mcp
-          action: example
+      - {name: list-mirrored-servers, from: {sourceNamespace: hosted-mcp-multi-modal-mirror-mcp, action: list-mirrored-servers}}
+      - {name: get-server, from: {sourceNamespace: hosted-mcp-multi-modal-mirror-mcp, action: get-server}}

@@ -1,67 +1,57 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Sailpoint Identity Governance Capability
-  description: A capability that wraps SailPoint identity-governance lookups and exposes them as MCP for an internal agent that needs to verify role + entitlement before acting.
-  tags:
-  - Naftiko
+  description: A capability over SailPoint Identity Security Cloud for identity governance — accounts, access reviews, certifications.
+  tags: [Naftiko, SailPoint, Identity]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: sailpoint-env
+  keys: {SAILPOINT_HOST: SAILPOINT_HOST, SAILPOINT_TOKEN: SAILPOINT_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: sailpoint
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SAILPOINT_HOST}}
+    authentication: {type: bearer, token: '{{SAILPOINT_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: accounts, path: /v3/accounts, operations: [{name: list-accounts, method: GET}]}
+    - {name: certifications, path: /v3/certifications, operations: [{name: list-certifications, method: GET}]}
+    - name: certification
+      path: /v3/certifications/{{id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-certification, method: GET, inputParameters: [{name: id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: sailpoint-identity-governance-capability-rest
-    description: REST API for Sailpoint Identity Governance Capability.
+    description: REST surface for SailPoint identity governance.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: certifications, path: /certifications, operations: [{method: GET, name: list-certifications, call: sailpoint.list-certifications}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: sailpoint-identity-governance-capability-mcp
-    description: MCP server exposing Sailpoint Identity Governance Capability for AI agents.
+    description: MCP for SailPoint identity governance.
     tools:
-    - name: example
-      description: A capability that wraps SailPoint identity-governance lookups and exposes them as MCP for an internal agent that needs to verify role + entitlement before acting.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-accounts, hints: {readOnly: true}, call: sailpoint.list-accounts}
+    - {name: list-certifications, hints: {readOnly: true}, call: sailpoint.list-certifications}
+    - name: get-certification
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: sailpoint.get-certification
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: sailpoint-identity-governance-capability-skills
-    description: Agent Skill bundle for Sailpoint Identity Governance Capability.
+    description: Skill for SailPoint identity governance.
     skills:
     - name: sailpoint-identity-governance-capability
-      description: A capability that wraps SailPoint identity-governance lookups and exposes them as MCP for an internal agent that needs to verify role + entitlement before acting.
+      description: SailPoint identity governance.
       location: file:///opt/naftiko/skills/sailpoint-identity-governance-capability
-      allowed-tools: example
+      allowed-tools: list-accounts,list-certifications,get-certification
       tools:
-      - name: example
-        description: A capability that wraps SailPoint identity-governance lookups and exposes them as MCP for an internal agent that needs to verify role + entitlement before acting.
-        from:
-          sourceNamespace: sailpoint-identity-governance-capability-mcp
-          action: example
+      - {name: list-accounts, from: {sourceNamespace: sailpoint-identity-governance-capability-mcp, action: list-accounts}}
+      - {name: list-certifications, from: {sourceNamespace: sailpoint-identity-governance-capability-mcp, action: list-certifications}}
+      - {name: get-certification, from: {sourceNamespace: sailpoint-identity-governance-capability-mcp, action: get-certification}}

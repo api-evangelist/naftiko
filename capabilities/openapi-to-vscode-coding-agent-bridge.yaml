@@ -1,67 +1,51 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Openapi To Vscode Coding Agent Bridge
-  description: A capability that takes a -generated SDK + agent skill pair and surfaces the relevant slice into a VS Code Copilot-style coding agent on demand.
-  tags:
-  - Naftiko
+  description: A capability that bridges OpenAPI specs to VS Code coding-agent runtimes (Copilot, Continue) via SDK + skills generation.
+  tags: [Naftiko, OpenAPI, VS Code, Copilot]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: speakeasy-env
+  keys: {SPEAKEASY_API_KEY: SPEAKEASY_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: speakeasy
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.speakeasy.com
+    authentication: {type: bearer, token: '{{SPEAKEASY_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: workspaces, path: /v1/workspaces, operations: [{name: list-workspaces, method: GET}]}
+    - name: generate
+      path: '/v1/workspaces/{{workspace_id}}/generate'
       operations:
-      - name: example-op
-        method: GET
+      - {name: generate-sdks-and-skills, method: POST, inputParameters: [{name: workspace_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: openapi-to-vscode-coding-agent-bridge-rest
-    description: REST API for Openapi To Vscode Coding Agent Bridge.
+    description: REST surface for OpenAPI→VS Code bridge.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: generate, path: '/generate/{{workspace_id}}', operations: [{method: POST, name: generate-sdks-and-skills, inputParameters: [{name: workspace_id, in: path, type: string}], call: speakeasy.generate-sdks-and-skills}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: openapi-to-vscode-coding-agent-bridge-mcp
-    description: MCP server exposing Openapi To Vscode Coding Agent Bridge for AI agents.
+    description: MCP for OpenAPI→VS Code bridge.
     tools:
-    - name: example
-      description: A capability that takes a -generated SDK + agent skill pair and surfaces the relevant slice into a VS Code Copilot-style coding agent on demand.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: generate-sdks-and-skills
+      inputParameters: [{name: workspace_id, type: string, required: true}]
+      call: speakeasy.generate-sdks-and-skills
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: openapi-to-vscode-coding-agent-bridge-skills
-    description: Agent Skill bundle for Openapi To Vscode Coding Agent Bridge.
+    description: Skill for OpenAPI→VS Code bridge.
     skills:
     - name: openapi-to-vscode-coding-agent-bridge
-      description: A capability that takes a -generated SDK + agent skill pair and surfaces the relevant slice into a VS Code Copilot-style coding agent on demand.
+      description: OpenAPI→VS Code coding-agent bridge.
       location: file:///opt/naftiko/skills/openapi-to-vscode-coding-agent-bridge
-      allowed-tools: example
+      allowed-tools: generate-sdks-and-skills
       tools:
-      - name: example
-        description: A capability that takes a -generated SDK + agent skill pair and surfaces the relevant slice into a VS Code Copilot-style coding agent on demand.
-        from:
-          sourceNamespace: openapi-to-vscode-coding-agent-bridge-mcp
-          action: example
+      - {name: generate-sdks-and-skills, from: {sourceNamespace: openapi-to-vscode-coding-agent-bridge-mcp, action: generate-sdks-and-skills}}

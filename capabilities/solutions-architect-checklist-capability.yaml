@@ -1,67 +1,59 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Solutions Architect Checklist Capability
-  description: 'A capability that ticks the SA evaluation rubric: Multi-Step Orchestration + JSONPath + Circuit Breaker + Resilience Metrics + governance + observability dashboard.'
-  tags:
-  - Naftiko
+  description: A capability that codifies the solutions-architect onboarding checklist as a runnable workflow with progress tracking.
+  tags: [Naftiko, Solutions Architect, Checklist]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: checklists, path: /v1/checklists, operations: [{name: list-checklists, method: GET}]}
+    - name: checklist-progress
+      path: '/v1/checklists/{{checklist_id}}/progress'
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-progress, method: GET, inputParameters: [{name: checklist_id, in: path}]}
+      - {name: update-progress, method: POST, inputParameters: [{name: checklist_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: solutions-architect-checklist-capability-rest
-    description: REST API for Solutions Architect Checklist Capability.
+    description: REST surface for SA checklist.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: progress, path: '/progress/{{checklist_id}}', operations: [{method: GET, name: get-progress, inputParameters: [{name: checklist_id, in: path, type: string}], call: naftiko-control.get-progress}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: solutions-architect-checklist-capability-mcp
-    description: MCP server exposing Solutions Architect Checklist Capability for AI agents.
+    description: MCP for SA checklist.
     tools:
-    - name: example
-      description: 'A capability that ticks the SA evaluation rubric: Multi-Step Orchestration + JSONPath + Circuit Breaker + Resilience Metrics + governance + observability dashboard.'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-checklists, hints: {readOnly: true}, call: naftiko-control.list-checklists}
+    - name: get-progress
+      hints: {readOnly: true}
+      inputParameters: [{name: checklist_id, type: string, required: true}]
+      call: naftiko-control.get-progress
+    - name: update-progress
+      inputParameters: [{name: checklist_id, type: string, required: true}]
+      call: naftiko-control.update-progress
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: solutions-architect-checklist-capability-skills
-    description: Agent Skill bundle for Solutions Architect Checklist Capability.
+    description: Skill for SA checklist.
     skills:
     - name: solutions-architect-checklist-capability
-      description: 'A capability that ticks the SA evaluation rubric: Multi-Step Orchestration + JSONPath + Circuit Breaker + Resilience Metrics + governance + observability dashboard.'
+      description: Solutions architect checklist.
       location: file:///opt/naftiko/skills/solutions-architect-checklist-capability
-      allowed-tools: example
+      allowed-tools: list-checklists,get-progress,update-progress
       tools:
-      - name: example
-        description: 'A capability that ticks the SA evaluation rubric: Multi-Step Orchestration + JSONPath + Circuit Breaker + Resilience Metrics + governance + observability dashboard.'
-        from:
-          sourceNamespace: solutions-architect-checklist-capability-mcp
-          action: example
+      - {name: list-checklists, from: {sourceNamespace: solutions-architect-checklist-capability-mcp, action: list-checklists}}
+      - {name: get-progress, from: {sourceNamespace: solutions-architect-checklist-capability-mcp, action: get-progress}}
+      - {name: update-progress, from: {sourceNamespace: solutions-architect-checklist-capability-mcp, action: update-progress}}

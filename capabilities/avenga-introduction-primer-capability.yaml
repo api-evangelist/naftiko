@@ -15,9 +15,9 @@ capability:
     baseUri: https://api.bamboohr.com
     authentication: {type: bearer, token: '{{BAMBOOHR_TOKEN}}'}
     resources:
-    - {name: employees, path: /api/gateway.php/{{BAMBOOHR_SUBDOMAIN}}/v1/employees/directory, operations: [{name: list-employees, method: GET}]}
+    - {name: employees, path: '/api/gateway.php/{{BAMBOOHR_SUBDOMAIN}}/v1/employees/directory', operations: [{name: list-employees, method: GET}]}
     - name: employee
-      path: /api/gateway.php/{{BAMBOOHR_SUBDOMAIN}}/v1/employees/{{employee_id}}
+      path: '/api/gateway.php/{{BAMBOOHR_SUBDOMAIN}}/v1/employees/{{employee_id}}'
       operations:
       - {name: get-employee, method: GET, inputParameters: [{name: employee_id, in: path}]}
   exposes:

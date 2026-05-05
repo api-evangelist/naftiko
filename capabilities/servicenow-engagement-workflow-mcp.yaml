@@ -1,67 +1,56 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Servicenow Engagement Workflow Mcp
-  description: A capability over ServiceNow ITSM/HRSD records that exposes engagement-workflow tools to an consulting-AI assistant with governance + agent-safety tags.
-  tags:
-  - Naftiko
+  description: A capability over ServiceNow Engagement workflows, exposing case creation and lookup as MCP tools.
+  tags: [Naftiko, ServiceNow, Engagement]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: servicenow-env
+  keys: {SN_HOST: SN_HOST, SN_USER: SN_USER, SN_PASSWORD: SN_PASSWORD}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: servicenow
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SN_HOST}}
+    authentication: {type: basic, username: '{{SN_USER}}', password: '{{SN_PASSWORD}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: cases, path: /api/now/table/case, operations: [{name: list-cases, method: GET}, {name: create-case, method: POST}]}
+    - name: case
+      path: /api/now/table/case/{{sys_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-case, method: GET, inputParameters: [{name: sys_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: servicenow-engagement-workflow-mcp-rest
-    description: REST API for Servicenow Engagement Workflow Mcp.
+    description: REST surface for ServiceNow Engagement.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: cases, path: /cases, operations: [{method: POST, name: create-case, call: servicenow.create-case}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: servicenow-engagement-workflow-mcp-mcp
-    description: MCP server exposing Servicenow Engagement Workflow Mcp for AI agents.
+    description: MCP for ServiceNow Engagement.
     tools:
-    - name: example
-      description: A capability over ServiceNow ITSM/HRSD records that exposes engagement-workflow tools to an consulting-AI assistant with governance + agent-safety tags.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-cases, hints: {readOnly: true}, call: servicenow.list-cases}
+    - {name: create-case, call: servicenow.create-case}
+    - name: get-case
+      hints: {readOnly: true}
+      inputParameters: [{name: sys_id, type: string, required: true}]
+      call: servicenow.get-case
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: servicenow-engagement-workflow-mcp-skills
-    description: Agent Skill bundle for Servicenow Engagement Workflow Mcp.
+    description: Skill for ServiceNow Engagement.
     skills:
     - name: servicenow-engagement-workflow-mcp
-      description: A capability over ServiceNow ITSM/HRSD records that exposes engagement-workflow tools to an consulting-AI assistant with governance + agent-safety tags.
+      description: ServiceNow Engagement workflows.
       location: file:///opt/naftiko/skills/servicenow-engagement-workflow-mcp
-      allowed-tools: example
+      allowed-tools: list-cases,create-case,get-case
       tools:
-      - name: example
-        description: A capability over ServiceNow ITSM/HRSD records that exposes engagement-workflow tools to an consulting-AI assistant with governance + agent-safety tags.
-        from:
-          sourceNamespace: servicenow-engagement-workflow-mcp-mcp
-          action: example
+      - {name: list-cases, from: {sourceNamespace: servicenow-engagement-workflow-mcp-mcp, action: list-cases}}
+      - {name: create-case, from: {sourceNamespace: servicenow-engagement-workflow-mcp-mcp, action: create-case}}
+      - {name: get-case, from: {sourceNamespace: servicenow-engagement-workflow-mcp-mcp, action: get-case}}

@@ -1,67 +1,62 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Regulated Industry Capability
-  description: A small -relevant regulated-industry capability used as the artifact-led re-nudge instead of re-sending the Signals page.
-  tags:
-  - Naftiko
+  description: A regulated-industry capability template that wraps any underlying API in audit + retention + DLP gates.
+  tags: [Naftiko, Regulated, Compliance]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
+- namespace: target-env
+  keys: {TARGET_HOST: TARGET_HOST, TARGET_TOKEN: TARGET_TOKEN}
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: target
+    type: http
+    baseUri: https://{{TARGET_HOST}}
+    authentication: {type: bearer, token: '{{TARGET_TOKEN}}'}
+    resources:
+    - name: resource
+      path: /api/v1/{{resource}}/{{id}}
+      operations:
+      - {name: get-resource, method: GET, inputParameters: [{name: resource, in: path}, {name: id, in: path}]}
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: audit-events, path: /v1/audit/events, operations: [{name: emit-audit, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: regulated-industry-capability-rest
-    description: REST API for Regulated Industry Capability.
+    description: Regulated REST surface with audit gating.
     resources:
-    - name: example
-      path: /example
+    - name: resource
+      path: /resources/{{resource}}/{{id}}
       operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+      - {method: GET, name: get-governed-resource, inputParameters: [{name: resource, in: path, type: string}, {name: id, in: path, type: string}], call: target.get-resource}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: regulated-industry-capability-mcp
-    description: MCP server exposing Regulated Industry Capability for AI agents.
+    description: MCP for regulated access.
     tools:
-    - name: example
-      description: A small -relevant regulated-industry capability used as the artifact-led re-nudge instead of re-sending the Signals page.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-governed-resource
+      hints: {readOnly: true}
+      inputParameters: [{name: resource, type: string, required: true}, {name: id, type: string, required: true}]
+      call: target.get-resource
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: regulated-industry-capability-skills
-    description: Agent Skill bundle for Regulated Industry Capability.
+    description: Skill for regulated access.
     skills:
     - name: regulated-industry-capability
-      description: A small -relevant regulated-industry capability used as the artifact-led re-nudge instead of re-sending the Signals page.
+      description: Regulated-industry access.
       location: file:///opt/naftiko/skills/regulated-industry-capability
-      allowed-tools: example
+      allowed-tools: get-governed-resource
       tools:
-      - name: example
-        description: A small -relevant regulated-industry capability used as the artifact-led re-nudge instead of re-sending the Signals page.
-        from:
-          sourceNamespace: regulated-industry-capability-mcp
-          action: example
+      - {name: get-governed-resource, from: {sourceNamespace: regulated-industry-capability-mcp, action: get-governed-resource}}

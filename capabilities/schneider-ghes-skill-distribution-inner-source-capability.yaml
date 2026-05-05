@@ -1,67 +1,57 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Ghes Skill Distribution Inner Source Capability
-  description: A capability that mirrors enterprise agent skills as inner-source repos with allow-list + manifest semantics, filling the self-hosted GitHub Enterprise Server skill-distribution gap Manu flagged as broken.
-  tags:
-  - Naftiko
+  description: Schneider Electric capability over GitHub Enterprise Server (GHES) for inner-source distribution of Agent Skills.
+  tags: [Naftiko, Schneider, GHES, Inner Source]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: ghes-env
+  keys: {GHES_HOST: GHES_HOST, GHES_TOKEN: GHES_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: ghes
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: 'https://{{GHES_HOST}}'
+    authentication: {type: bearer, token: '{{GHES_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: org-repos, path: '/api/v3/orgs/{{org}}/repos', operations: [{name: list-org-repos, method: GET, inputParameters: [{name: org, in: path}]}]}
+    - name: contents
+      path: '/api/v3/repos/{{owner}}/{{repo}}/contents/{{path}}'
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-skill-content, method: GET, inputParameters: [{name: owner, in: path}, {name: repo, in: path}, {name: path, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-ghes-skill-distribution-inner-source-capability-rest
-    description: REST API for Schneider Ghes Skill Distribution Inner Source Capability.
+    description: REST surface for GHES skill distribution.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: skills, path: '/skills/{{org}}', operations: [{method: GET, name: list-org-skills, inputParameters: [{name: org, in: path, type: string}], call: ghes.list-org-repos}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-ghes-skill-distribution-inner-source-capability-mcp
-    description: MCP server exposing Schneider Ghes Skill Distribution Inner Source Capability for AI agents.
+    description: MCP for GHES skill distribution.
     tools:
-    - name: example
-      description: A capability that mirrors enterprise agent skills as inner-source repos with allow-list + manifest semantics, filling the self-hosted GitHub Enterprise Server skill-distribution gap Manu flagged as broken.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: list-org-skills
+      hints: {readOnly: true}
+      inputParameters: [{name: org, type: string, required: true}]
+      call: ghes.list-org-repos
+    - name: get-skill-content
+      hints: {readOnly: true}
+      inputParameters: [{name: owner, type: string, required: true}, {name: repo, type: string, required: true}, {name: path, type: string, required: true}]
+      call: ghes.get-skill-content
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-ghes-skill-distribution-inner-source-capability-skills
-    description: Agent Skill bundle for Schneider Ghes Skill Distribution Inner Source Capability.
+    description: Skill for GHES skill distribution.
     skills:
     - name: schneider-ghes-skill-distribution-inner-source-capability
-      description: A capability that mirrors enterprise agent skills as inner-source repos with allow-list + manifest semantics, filling the self-hosted GitHub Enterprise Server skill-distribution gap Manu flagged as broken.
+      description: GHES inner-source skill distribution.
       location: file:///opt/naftiko/skills/schneider-ghes-skill-distribution-inner-source-capability
-      allowed-tools: example
+      allowed-tools: list-org-skills,get-skill-content
       tools:
-      - name: example
-        description: A capability that mirrors enterprise agent skills as inner-source repos with allow-list + manifest semantics, filling the self-hosted GitHub Enterprise Server skill-distribution gap Manu flagged as broken.
-        from:
-          sourceNamespace: schneider-ghes-skill-distribution-inner-source-capability-mcp
-          action: example
+      - {name: list-org-skills, from: {sourceNamespace: schneider-ghes-skill-distribution-inner-source-capability-mcp, action: list-org-skills}}
+      - {name: get-skill-content, from: {sourceNamespace: schneider-ghes-skill-distribution-inner-source-capability-mcp, action: get-skill-content}}

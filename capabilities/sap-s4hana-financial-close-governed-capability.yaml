@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Sap S4hana Financial Close Governed Capability
-  description: A capability over SAP S/4HANA financial close postings, exposing read-only MCP tools with continuous-compliance reporting (NIST/SOC2/PCI-style).
-  tags:
-  - Naftiko
+  description: A governed capability over SAP S/4HANA financial close — period-end ledger entries, FX revaluation, intercompany reconciliation as audit-tracked actions.
+  tags: [Naftiko, SAP, S/4HANA, Finance]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: sap-s4-env
+  keys: {SAP_S4_HOST: SAP_S4_HOST, SAP_S4_TOKEN: SAP_S4_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: sap-s4
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SAP_S4_HOST}}
+    authentication: {type: bearer, token: '{{SAP_S4_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: journal-entries, path: /sap/opu/odata/sap/API_JOURNALENTRYITEMBASIC_SRV/A_JournalEntryItemBasic, operations: [{name: list-journal-entries, method: GET}]}
+    - {name: financial-close, path: /sap/opu/odata/sap/API_FINANCIALCLOSE_SRV/A_FinancialClose, operations: [{name: trigger-period-close, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: sap-s4hana-financial-close-governed-capability-rest
-    description: REST API for Sap S4hana Financial Close Governed Capability.
+    description: Governed S/4HANA financial close surface.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: close, path: /period-close, operations: [{method: POST, name: trigger-period-close, call: sap-s4.trigger-period-close}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: sap-s4hana-financial-close-governed-capability-mcp
-    description: MCP server exposing Sap S4hana Financial Close Governed Capability for AI agents.
+    description: MCP for governed S/4HANA financial close.
     tools:
-    - name: example
-      description: A capability over SAP S/4HANA financial close postings, exposing read-only MCP tools with continuous-compliance reporting (NIST/SOC2/PCI-style).
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-journal-entries, hints: {readOnly: true}, call: sap-s4.list-journal-entries}
+    - {name: trigger-period-close, call: sap-s4.trigger-period-close}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: sap-s4hana-financial-close-governed-capability-skills
-    description: Agent Skill bundle for Sap S4hana Financial Close Governed Capability.
+    description: Skill for governed S/4HANA close.
     skills:
     - name: sap-s4hana-financial-close-governed-capability
-      description: A capability over SAP S/4HANA financial close postings, exposing read-only MCP tools with continuous-compliance reporting (NIST/SOC2/PCI-style).
+      description: Governed S/4HANA financial close.
       location: file:///opt/naftiko/skills/sap-s4hana-financial-close-governed-capability
-      allowed-tools: example
+      allowed-tools: list-journal-entries,trigger-period-close
       tools:
-      - name: example
-        description: A capability over SAP S/4HANA financial close postings, exposing read-only MCP tools with continuous-compliance reporting (NIST/SOC2/PCI-style).
-        from:
-          sourceNamespace: sap-s4hana-financial-close-governed-capability-mcp
-          action: example
+      - {name: list-journal-entries, from: {sourceNamespace: sap-s4hana-financial-close-governed-capability-mcp, action: list-journal-entries}}
+      - {name: trigger-period-close, from: {sourceNamespace: sap-s4hana-financial-close-governed-capability-mcp, action: trigger-period-close}}

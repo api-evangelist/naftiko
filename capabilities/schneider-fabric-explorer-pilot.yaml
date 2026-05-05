@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Fabric Explorer Pilot
-  description: A pilot fabric configuration with NaftikoCapability CRD + Operator + Backstage NaftikoFabricExplorerPage managing the registry at scale.
-  tags:
-  - Naftiko
+  description: Schneider Electric pilot capability over Microsoft Fabric — workspaces and items exposed for AI-driven data exploration.
+  tags: [Naftiko, Schneider, Microsoft Fabric, Pilot]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: fabric-env
+  keys: {FABRIC_TOKEN: FABRIC_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: fabric
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.fabric.microsoft.com
+    authentication: {type: bearer, token: '{{FABRIC_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: workspaces, path: /v1/workspaces, operations: [{name: list-workspaces, method: GET}]}
+    - name: workspace-items
+      path: /v1/workspaces/{{workspace_id}}/items
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-workspace-items, method: GET, inputParameters: [{name: workspace_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-fabric-explorer-pilot-rest
-    description: REST API for Schneider Fabric Explorer Pilot.
+    description: REST surface for Fabric explorer pilot.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: workspaces, path: /workspaces, operations: [{method: GET, name: list-workspaces, call: fabric.list-workspaces}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-fabric-explorer-pilot-mcp
-    description: MCP server exposing Schneider Fabric Explorer Pilot for AI agents.
+    description: MCP for Fabric explorer pilot.
     tools:
-    - name: example
-      description: A pilot fabric configuration with NaftikoCapability CRD + Operator + Backstage NaftikoFabricExplorerPage managing the registry at scale.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-workspaces, hints: {readOnly: true}, call: fabric.list-workspaces}
+    - name: list-workspace-items
+      hints: {readOnly: true}
+      inputParameters: [{name: workspace_id, type: string, required: true}]
+      call: fabric.list-workspace-items
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-fabric-explorer-pilot-skills
-    description: Agent Skill bundle for Schneider Fabric Explorer Pilot.
+    description: Skill for Fabric explorer pilot.
     skills:
     - name: schneider-fabric-explorer-pilot
-      description: A pilot fabric configuration with NaftikoCapability CRD + Operator + Backstage NaftikoFabricExplorerPage managing the registry at scale.
+      description: Schneider Fabric explorer pilot.
       location: file:///opt/naftiko/skills/schneider-fabric-explorer-pilot
-      allowed-tools: example
+      allowed-tools: list-workspaces,list-workspace-items
       tools:
-      - name: example
-        description: A pilot fabric configuration with NaftikoCapability CRD + Operator + Backstage NaftikoFabricExplorerPage managing the registry at scale.
-        from:
-          sourceNamespace: schneider-fabric-explorer-pilot-mcp
-          action: example
+      - {name: list-workspaces, from: {sourceNamespace: schneider-fabric-explorer-pilot-mcp, action: list-workspaces}}
+      - {name: list-workspace-items, from: {sourceNamespace: schneider-fabric-explorer-pilot-mcp, action: list-workspace-items}}

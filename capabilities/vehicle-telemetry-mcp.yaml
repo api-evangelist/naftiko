@@ -1,67 +1,63 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Vehicle Telemetry Mcp
-  description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
-  tags:
-  - Naftiko
+  description: A capability over a vehicle-telemetry API (HERE / Smartcar) exposing real-time telematics as MCP tools.
+  tags: [Naftiko, Vehicle, Telematics]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: smartcar-env
+  keys: {SMARTCAR_TOKEN: SMARTCAR_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: smartcar
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.smartcar.com
+    authentication: {type: bearer, token: '{{SMARTCAR_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: vehicles, path: /v2.0/vehicles, operations: [{name: list-vehicles, method: GET}]}
+    - name: vehicle-location
+      path: /v2.0/vehicles/{{vehicle_id}}/location
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-location, method: GET, inputParameters: [{name: vehicle_id, in: path}]}
+    - name: vehicle-odometer
+      path: /v2.0/vehicles/{{vehicle_id}}/odometer
+      operations:
+      - {name: get-odometer, method: GET, inputParameters: [{name: vehicle_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: vehicle-telemetry-mcp-rest
-    description: REST API for Vehicle Telemetry Mcp.
+    description: REST surface for vehicle telemetry.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: vehicles, path: /vehicles, operations: [{method: GET, name: list-vehicles, call: smartcar.list-vehicles}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: vehicle-telemetry-mcp-mcp
-    description: MCP server exposing Vehicle Telemetry Mcp for AI agents.
+    description: MCP for vehicle telemetry.
     tools:
-    - name: example
-      description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-vehicles, hints: {readOnly: true}, call: smartcar.list-vehicles}
+    - name: get-location
+      hints: {readOnly: true}
+      inputParameters: [{name: vehicle_id, type: string, required: true}]
+      call: smartcar.get-location
+    - name: get-odometer
+      hints: {readOnly: true}
+      inputParameters: [{name: vehicle_id, type: string, required: true}]
+      call: smartcar.get-odometer
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: vehicle-telemetry-mcp-skills
-    description: Agent Skill bundle for Vehicle Telemetry Mcp.
+    description: Skill for vehicle telemetry.
     skills:
     - name: vehicle-telemetry-mcp
-      description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
+      description: Vehicle telemetry.
       location: file:///opt/naftiko/skills/vehicle-telemetry-mcp
-      allowed-tools: example
+      allowed-tools: list-vehicles,get-location,get-odometer
       tools:
-      - name: example
-        description: Wraps a -shaped vehicle telemetry API as MCP tools an AI assistant can call directly — the entry point in a Compose AI Context (#5) collection.
-        from:
-          sourceNamespace: vehicle-telemetry-mcp-mcp
-          action: example
+      - {name: list-vehicles, from: {sourceNamespace: vehicle-telemetry-mcp-mcp, action: list-vehicles}}
+      - {name: get-location, from: {sourceNamespace: vehicle-telemetry-mcp-mcp, action: get-location}}
+      - {name: get-odometer, from: {sourceNamespace: vehicle-telemetry-mcp-mcp, action: get-odometer}}

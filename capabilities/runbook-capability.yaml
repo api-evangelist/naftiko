@@ -1,67 +1,62 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Runbook Capability
-  description: A -flavored capability scaffolded with K8s manifests + observability built in, sent as the un-sticker — "here's what running Naftiko in platform looks like."
-  tags:
-  - Naftiko
+  description: A runbook capability codifying ops procedures as MCP tools — start, observe, decide, escalate.
+  tags: [Naftiko, Runbook]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: pagerduty-env
+  keys: {PAGERDUTY_TOKEN: PAGERDUTY_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: pagerduty
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.pagerduty.com
+    authentication: {type: bearer, token: '{{PAGERDUTY_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: incidents, path: /incidents, operations: [{name: list-incidents, method: GET}]}
+    - name: incident
+      path: /incidents/{{id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-incident, method: GET, inputParameters: [{name: id, in: path}]}
+      - {name: update-incident, method: PUT, inputParameters: [{name: id, in: path}]}
+    - {name: oncalls, path: /oncalls, operations: [{name: list-oncalls, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: runbook-capability-rest
-    description: REST API for Runbook Capability.
+    description: REST surface for runbook ops.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: incidents, path: /incidents, operations: [{method: GET, name: list-incidents, call: pagerduty.list-incidents}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: runbook-capability-mcp
-    description: MCP server exposing Runbook Capability for AI agents.
+    description: MCP for runbook ops.
     tools:
-    - name: example
-      description: A -flavored capability scaffolded with K8s manifests + observability built in, sent as the un-sticker — "here's what running Naftiko in platform looks like."
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-incidents, hints: {readOnly: true}, call: pagerduty.list-incidents}
+    - name: get-incident
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: pagerduty.get-incident
+    - name: update-incident
+      inputParameters: [{name: id, type: string, required: true}]
+      call: pagerduty.update-incident
+    - {name: list-oncalls, hints: {readOnly: true}, call: pagerduty.list-oncalls}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: runbook-capability-skills
-    description: Agent Skill bundle for Runbook Capability.
+    description: Skill for runbook ops.
     skills:
     - name: runbook-capability
-      description: A -flavored capability scaffolded with K8s manifests + observability built in, sent as the un-sticker — "here's what running Naftiko in platform looks like."
+      description: Ops runbook.
       location: file:///opt/naftiko/skills/runbook-capability
-      allowed-tools: example
+      allowed-tools: list-incidents,get-incident,update-incident,list-oncalls
       tools:
-      - name: example
-        description: A -flavored capability scaffolded with K8s manifests + observability built in, sent as the un-sticker — "here's what running Naftiko in platform looks like."
-        from:
-          sourceNamespace: runbook-capability-mcp
-          action: example
+      - {name: list-incidents, from: {sourceNamespace: runbook-capability-mcp, action: list-incidents}}
+      - {name: get-incident, from: {sourceNamespace: runbook-capability-mcp, action: get-incident}}
+      - {name: update-incident, from: {sourceNamespace: runbook-capability-mcp, action: update-incident}}
+      - {name: list-oncalls, from: {sourceNamespace: runbook-capability-mcp, action: list-oncalls}}

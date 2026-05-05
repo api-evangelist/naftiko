@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Snowflake Client Data Trust Posture Capability
-  description: A capability over a Snowflake-hosted client engagement dataset that leads with governance + sensitivity tags + PII detection — the "trust posture" artifact for re-engagement.
-  tags:
-  - Naftiko
+  description: A Naftiko capability over Snowflake exposing governed read access tied to data trust/classification posture.
+  tags: [Naftiko, Snowflake]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: snowflake-env
+  keys: {SNOWFLAKE_ACCOUNT: SNOWFLAKE_ACCOUNT, SNOWFLAKE_TOKEN: SNOWFLAKE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: snowflake
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SNOWFLAKE_ACCOUNT}}.snowflakecomputing.com
+    authentication: {type: bearer, token: '{{SNOWFLAKE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: statements, path: /api/v2/statements, operations: [{name: run-sql, method: POST}]}
+    - name: statement
+      path: /api/v2/statements/{{statement_handle}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-statement, method: GET, inputParameters: [{name: statement_handle, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: snowflake-client-data-trust-posture-capability-rest
-    description: REST API for Snowflake Client Data Trust Posture Capability.
+    description: REST surface for governed Snowflake reads.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: query, path: /query, operations: [{method: POST, name: run-sql, call: snowflake.run-sql}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: snowflake-client-data-trust-posture-capability-mcp
-    description: MCP server exposing Snowflake Client Data Trust Posture Capability for AI agents.
+    description: MCP for governed Snowflake reads.
     tools:
-    - name: example
-      description: A capability over a Snowflake-hosted client engagement dataset that leads with governance + sensitivity tags + PII detection — the "trust posture" artifact for re-engagement.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: run-sql, call: snowflake.run-sql}
+    - name: get-statement
+      hints: {readOnly: true}
+      inputParameters: [{name: statement_handle, type: string, required: true}]
+      call: snowflake.get-statement
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: snowflake-client-data-trust-posture-capability-skills
-    description: Agent Skill bundle for Snowflake Client Data Trust Posture Capability.
+    description: Skill for governed Snowflake.
     skills:
     - name: snowflake-client-data-trust-posture-capability
-      description: A capability over a Snowflake-hosted client engagement dataset that leads with governance + sensitivity tags + PII detection — the "trust posture" artifact for re-engagement.
+      description: Governed Snowflake access.
       location: file:///opt/naftiko/skills/snowflake-client-data-trust-posture-capability
-      allowed-tools: example
+      allowed-tools: run-sql,get-statement
       tools:
-      - name: example
-        description: A capability over a Snowflake-hosted client engagement dataset that leads with governance + sensitivity tags + PII detection — the "trust posture" artifact for re-engagement.
-        from:
-          sourceNamespace: snowflake-client-data-trust-posture-capability-mcp
-          action: example
+      - {name: run-sql, from: {sourceNamespace: snowflake-client-data-trust-posture-capability-mcp, action: run-sql}}
+      - {name: get-statement, from: {sourceNamespace: snowflake-client-data-trust-posture-capability-mcp, action: get-statement}}

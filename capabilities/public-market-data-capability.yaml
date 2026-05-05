@@ -1,67 +1,47 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Public Market Data Capability
-  description: 'Wraps a public market-data API (e.g., FRED, Alpha Vantage) as a -shaped reference, sent as the nudge artifact: "we built this against your apparent shape."'
-  tags:
-  - Naftiko
+  description: A capability over public market-data (Alpha Vantage / Yahoo Finance) for retail-grade quote and historical data.
+  tags: [Naftiko, Market Data, Alpha Vantage]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: alphavantage-env
+  keys: {ALPHAVANTAGE_API_KEY: ALPHAVANTAGE_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: alphavantage
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://www.alphavantage.co
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: query, path: /query, operations: [{name: query-market-data, method: GET, inputParameters: [{name: function, in: query}, {name: symbol, in: query}, {name: apikey, in: query}]}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: public-market-data-capability-rest
-    description: REST API for Public Market Data Capability.
+    description: REST surface for public market data.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: quote, path: '/quote/{{symbol}}', operations: [{method: GET, name: get-quote, inputParameters: [{name: symbol, in: path, type: string}], call: alphavantage.query-market-data}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: public-market-data-capability-mcp
-    description: MCP server exposing Public Market Data Capability for AI agents.
+    description: MCP for public market data.
     tools:
-    - name: example
-      description: 'Wraps a public market-data API (e.g., FRED, Alpha Vantage) as a -shaped reference, sent as the nudge artifact: "we built this against your apparent shape."'
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-quote
+      hints: {readOnly: true}
+      inputParameters: [{name: symbol, type: string, required: true}]
+      call: alphavantage.query-market-data
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: public-market-data-capability-skills
-    description: Agent Skill bundle for Public Market Data Capability.
+    description: Skill for public market data.
     skills:
     - name: public-market-data-capability
-      description: 'Wraps a public market-data API (e.g., FRED, Alpha Vantage) as a -shaped reference, sent as the nudge artifact: "we built this against your apparent shape."'
+      description: Public market data.
       location: file:///opt/naftiko/skills/public-market-data-capability
-      allowed-tools: example
+      allowed-tools: get-quote
       tools:
-      - name: example
-        description: 'Wraps a public market-data API (e.g., FRED, Alpha Vantage) as a -shaped reference, sent as the nudge artifact: "we built this against your apparent shape."'
-        from:
-          sourceNamespace: public-market-data-capability-mcp
-          action: example
+      - {name: get-quote, from: {sourceNamespace: public-market-data-capability-mcp, action: get-quote}}

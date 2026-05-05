@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Prisma Api As Skill Folder
-  description: A capability over a Prisma Cloud API that ships AGENT.md + SKILL.md as the canonical published documentation, repositioning his TW role as the spec author.
-  tags:
-  - Naftiko
+  description: A capability that wraps a Palo Alto Prisma API as a downloadable Agent Skill folder.
+  tags: [Naftiko, Prisma, Skill Folder]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: prisma-env
+  keys: {PRISMA_HOST: PRISMA_HOST, PRISMA_TOKEN: PRISMA_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: prisma
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{PRISMA_HOST}}
+    authentication: {type: bearer, token: '{{PRISMA_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: alerts, path: /alerts, operations: [{name: list-alerts, method: GET}]}
+    - name: alert
+      path: /alerts/{{alert_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-alert, method: GET, inputParameters: [{name: alert_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: prisma-api-as-skill-folder-rest
-    description: REST API for Prisma Api As Skill Folder.
+    description: REST surface for Prisma alerts.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: alerts, path: /alerts, operations: [{method: GET, name: list-alerts, call: prisma.list-alerts}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: prisma-api-as-skill-folder-mcp
-    description: MCP server exposing Prisma Api As Skill Folder for AI agents.
+    description: MCP for Prisma alerts.
     tools:
-    - name: example
-      description: A capability over a Prisma Cloud API that ships AGENT.md + SKILL.md as the canonical published documentation, repositioning his TW role as the spec author.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-alerts, hints: {readOnly: true}, call: prisma.list-alerts}
+    - name: get-alert
+      hints: {readOnly: true}
+      inputParameters: [{name: alert_id, type: string, required: true}]
+      call: prisma.get-alert
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: prisma-api-as-skill-folder-skills
-    description: Agent Skill bundle for Prisma Api As Skill Folder.
+    description: Skill folder for Prisma alerts.
     skills:
     - name: prisma-api-as-skill-folder
-      description: A capability over a Prisma Cloud API that ships AGENT.md + SKILL.md as the canonical published documentation, repositioning his TW role as the spec author.
+      description: Prisma API as Skill folder.
       location: file:///opt/naftiko/skills/prisma-api-as-skill-folder
-      allowed-tools: example
+      allowed-tools: list-alerts,get-alert
       tools:
-      - name: example
-        description: A capability over a Prisma Cloud API that ships AGENT.md + SKILL.md as the canonical published documentation, repositioning his TW role as the spec author.
-        from:
-          sourceNamespace: prisma-api-as-skill-folder-mcp
-          action: example
+      - {name: list-alerts, from: {sourceNamespace: prisma-api-as-skill-folder-mcp, action: list-alerts}}
+      - {name: get-alert, from: {sourceNamespace: prisma-api-as-skill-folder-mcp, action: get-alert}}

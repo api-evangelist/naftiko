@@ -1,67 +1,45 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Team Lead Microservice Dedup Capability
-  description: A Capability Composition demo where multiple internal services are reduced to one consumable capability — the de-dup pattern for a Team Lead persona.
-  tags:
-  - Naftiko
+  description: A capability that detects duplicate microservices across teams by comparing OpenAPI specs and surfacing them for the team lead.
+  tags: [Naftiko, Microservice, Dedup]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: github-env
+  keys: {GITHUB_TOKEN: GITHUB_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.github.com
+    authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: search-code, path: /search/code, operations: [{name: search-openapi-specs, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: team-lead-microservice-dedup-capability-rest
-    description: REST API for Team Lead Microservice Dedup Capability.
+    description: REST surface for microservice dedup.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: duplicates, path: /duplicates, operations: [{method: GET, name: find-duplicates, call: github.search-openapi-specs}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: team-lead-microservice-dedup-capability-mcp
-    description: MCP server exposing Team Lead Microservice Dedup Capability for AI agents.
+    description: MCP for microservice dedup.
     tools:
-    - name: example
-      description: A Capability Composition demo where multiple internal services are reduced to one consumable capability — the de-dup pattern for a Team Lead persona.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: find-duplicates, hints: {readOnly: true}, call: github.search-openapi-specs}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: team-lead-microservice-dedup-capability-skills
-    description: Agent Skill bundle for Team Lead Microservice Dedup Capability.
+    description: Skill for microservice dedup.
     skills:
     - name: team-lead-microservice-dedup-capability
-      description: A Capability Composition demo where multiple internal services are reduced to one consumable capability — the de-dup pattern for a Team Lead persona.
+      description: Microservice dedup.
       location: file:///opt/naftiko/skills/team-lead-microservice-dedup-capability
-      allowed-tools: example
+      allowed-tools: find-duplicates
       tools:
-      - name: example
-        description: A Capability Composition demo where multiple internal services are reduced to one consumable capability — the de-dup pattern for a Team Lead persona.
-        from:
-          sourceNamespace: team-lead-microservice-dedup-capability-mcp
-          action: example
+      - {name: find-duplicates, from: {sourceNamespace: team-lead-microservice-dedup-capability-mcp, action: find-duplicates}}

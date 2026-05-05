@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Okta Auth0 Obo Token Propagation Capability
-  description: A capability that handles on-behalf-of token propagation across agent-to-agent calls, using Okta + Auth0 standards work to keep identity continuous through multi-step agent flows alongside the existing Microsoft Agent 365 bridge.
-  tags:
-  - Naftiko
+  description: A capability that propagates Okta/Auth0 on-behalf-of (OBO) tokens through the Naftiko proxy so upstream APIs see the original user identity.
+  tags: [Naftiko, Okta, Auth0, OBO]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: okta-env
+  keys: {OKTA_DOMAIN: OKTA_DOMAIN, OKTA_TOKEN: OKTA_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: okta
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{OKTA_DOMAIN}}
+    authentication: {type: bearer, token: '{{OKTA_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: token, path: /oauth2/v1/token, operations: [{name: exchange-obo-token, method: POST, description: RFC 8693 token exchange for OBO.}]}
+    - {name: introspect, path: /oauth2/v1/introspect, operations: [{name: introspect-token, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: okta-auth0-obo-token-propagation-capability-rest
-    description: REST API for Okta Auth0 Obo Token Propagation Capability.
+    description: REST surface for OBO token exchange.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: exchange, path: /token/exchange, operations: [{method: POST, name: exchange-obo-token, call: okta.exchange-obo-token}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: okta-auth0-obo-token-propagation-capability-mcp
-    description: MCP server exposing Okta Auth0 Obo Token Propagation Capability for AI agents.
+    description: MCP for OBO token exchange.
     tools:
-    - name: example
-      description: A capability that handles on-behalf-of token propagation across agent-to-agent calls, using Okta + Auth0 standards work to keep identity continuous through multi-step agent flows alongside the existing Microsoft Agent 365 bridge.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: exchange-obo-token, call: okta.exchange-obo-token}
+    - {name: introspect-token, call: okta.introspect-token}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: okta-auth0-obo-token-propagation-capability-skills
-    description: Agent Skill bundle for Okta Auth0 Obo Token Propagation Capability.
+    description: Skill for OBO propagation.
     skills:
     - name: okta-auth0-obo-token-propagation-capability
-      description: A capability that handles on-behalf-of token propagation across agent-to-agent calls, using Okta + Auth0 standards work to keep identity continuous through multi-step agent flows alongside the existing Microsoft Agent 365 bridge.
+      description: Okta/Auth0 OBO token propagation.
       location: file:///opt/naftiko/skills/okta-auth0-obo-token-propagation-capability
-      allowed-tools: example
+      allowed-tools: exchange-obo-token,introspect-token
       tools:
-      - name: example
-        description: A capability that handles on-behalf-of token propagation across agent-to-agent calls, using Okta + Auth0 standards work to keep identity continuous through multi-step agent flows alongside the existing Microsoft Agent 365 bridge.
-        from:
-          sourceNamespace: okta-auth0-obo-token-propagation-capability-mcp
-          action: example
+      - {name: exchange-obo-token, from: {sourceNamespace: okta-auth0-obo-token-propagation-capability-mcp, action: exchange-obo-token}}
+      - {name: introspect-token, from: {sourceNamespace: okta-auth0-obo-token-propagation-capability-mcp, action: introspect-token}}

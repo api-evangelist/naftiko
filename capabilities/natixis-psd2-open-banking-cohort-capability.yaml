@@ -1,67 +1,58 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Natixis Psd2 Open Banking Cohort Capability
-  description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
-  tags:
-  - Naftiko
+  description: A cohort capability for Natixis under PSD2 — Berlin Group accounts/balances/payments exposed as a single Naftiko capability.
+  tags: [Naftiko, Natixis, PSD2, Berlin Group]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: natixis-env
+  keys: {NATIXIS_HOST: NATIXIS_HOST, NATIXIS_TOKEN: NATIXIS_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: natixis
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{NATIXIS_HOST}}
+    authentication: {type: bearer, token: '{{NATIXIS_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: accounts, path: /berlingroup/v1/accounts, operations: [{name: list-accounts, method: GET}]}
+    - name: account-balances
+      path: /berlingroup/v1/accounts/{{account_id}}/balances
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-account-balances, method: GET, inputParameters: [{name: account_id, in: path}]}
+    - name: payments
+      path: /berlingroup/v1/payments/{{payment_product}}
+      operations:
+      - {name: initiate-payment, method: POST, inputParameters: [{name: payment_product, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: natixis-psd2-open-banking-cohort-capability-rest
-    description: REST API for Natixis Psd2 Open Banking Cohort Capability.
+    description: REST surface for Natixis PSD2.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: accounts, path: /accounts, operations: [{method: GET, name: list-accounts, call: natixis.list-accounts}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: natixis-psd2-open-banking-cohort-capability-mcp
-    description: MCP server exposing Natixis Psd2 Open Banking Cohort Capability for AI agents.
+    description: MCP for Natixis PSD2.
     tools:
-    - name: example
-      description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-accounts, hints: {readOnly: true}, call: natixis.list-accounts}
+    - name: get-account-balances
+      hints: {readOnly: true}
+      inputParameters: [{name: account_id, type: string, required: true}]
+      call: natixis.get-account-balances
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: natixis-psd2-open-banking-cohort-capability-skills
-    description: Agent Skill bundle for Natixis Psd2 Open Banking Cohort Capability.
+    description: Skill for Natixis PSD2.
     skills:
     - name: natixis-psd2-open-banking-cohort-capability
-      description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
+      description: Natixis PSD2 cohort.
       location: file:///opt/naftiko/skills/natixis-psd2-open-banking-cohort-capability
-      allowed-tools: example
+      allowed-tools: list-accounts,get-account-balances
       tools:
-      - name: example
-        description: A capability over BPCE's PSD2 / Natixis Open API portal endpoints, paired with BNP-cohort messaging as the shared French-Tier-1-bank artifact pattern.
-        from:
-          sourceNamespace: natixis-psd2-open-banking-cohort-capability-mcp
-          action: example
+      - {name: list-accounts, from: {sourceNamespace: natixis-psd2-open-banking-cohort-capability-mcp, action: list-accounts}}
+      - {name: get-account-balances, from: {sourceNamespace: natixis-psd2-open-banking-cohort-capability-mcp, action: get-account-balances}}

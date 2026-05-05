@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Invoices Bank Feeds Compose Context Capability
-  description: A composite capability over Invoices + Bank Feeds that returns one shaped accounting-context object for an SMB AI assistant.
-  tags:
-  - Naftiko
+  description: A capability composing invoicing (QuickBooks) with bank-feed (Plaid) data into a unified AR/AP context for finance agents.
+  tags: [Naftiko, QuickBooks, Plaid, Finance]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: quickbooks-env
+  keys: {QB_TOKEN: QB_TOKEN, QB_REALM_ID: QB_REALM_ID}
+- namespace: plaid-env
+  keys: {PLAID_CLIENT_ID: PLAID_CLIENT_ID, PLAID_SECRET: PLAID_SECRET, PLAID_TOKEN: PLAID_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: quickbooks
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://quickbooks.api.intuit.com
+    authentication: {type: bearer, token: '{{QB_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: invoices-query, path: '/v3/company/{{QB_REALM_ID}}/query', operations: [{name: query-invoices, method: GET}]}
+  - namespace: plaid
+    type: http
+    baseUri: https://production.plaid.com
+    resources:
+    - {name: transactions, path: /transactions/get, operations: [{name: get-transactions, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: invoices-bank-feeds-compose-context-capability-rest
-    description: REST API for Invoices Bank Feeds Compose Context Capability.
+    description: REST surface for invoice + bank-feed AI context.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: ar-ap-context, path: /ar-ap-context, operations: [{method: GET, name: get-ar-ap-context, call: quickbooks.query-invoices}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: invoices-bank-feeds-compose-context-capability-mcp
-    description: MCP server exposing Invoices Bank Feeds Compose Context Capability for AI agents.
+    description: MCP for AR/AP context.
     tools:
-    - name: example
-      description: A composite capability over Invoices + Bank Feeds that returns one shaped accounting-context object for an SMB AI assistant.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-ar-ap-context, hints: {readOnly: true}, call: quickbooks.query-invoices}
+    - {name: get-transactions, hints: {readOnly: true}, call: plaid.get-transactions}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: invoices-bank-feeds-compose-context-capability-skills
-    description: Agent Skill bundle for Invoices Bank Feeds Compose Context Capability.
+    description: Skill for AR/AP context.
     skills:
     - name: invoices-bank-feeds-compose-context-capability
-      description: A composite capability over Invoices + Bank Feeds that returns one shaped accounting-context object for an SMB AI assistant.
+      description: Invoice + bank-feed composed context.
       location: file:///opt/naftiko/skills/invoices-bank-feeds-compose-context-capability
-      allowed-tools: example
+      allowed-tools: get-ar-ap-context,get-transactions
       tools:
-      - name: example
-        description: A composite capability over Invoices + Bank Feeds that returns one shaped accounting-context object for an SMB AI assistant.
-        from:
-          sourceNamespace: invoices-bank-feeds-compose-context-capability-mcp
-          action: example
+      - {name: get-ar-ap-context, from: {sourceNamespace: invoices-bank-feeds-compose-context-capability-mcp, action: get-ar-ap-context}}
+      - {name: get-transactions, from: {sourceNamespace: invoices-bank-feeds-compose-context-capability-mcp, action: get-transactions}}

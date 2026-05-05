@@ -17,7 +17,7 @@ capability:
     resources:
     - {name: demo-workflows, path: /v1/demos/workflows, operations: [{name: list-demo-workflows, method: GET}]}
     - name: demo-workflow-run
-      path: /v1/demos/workflows/{{workflow_id}}/runs
+      path: '/v1/demos/workflows/{{workflow_id}}/runs'
       operations:
       - {name: run-demo-workflow, method: POST, inputParameters: [{name: workflow_id, in: path}]}
   exposes:
@@ -27,7 +27,7 @@ capability:
     namespace: deterministic-foundation-for-agents-demo-rest
     description: REST surface for the deterministic-foundation demo.
     resources:
-    - {name: run, path: /demos/{{workflow_id}}/run, operations: [{method: POST, name: run-demo, inputParameters: [{name: workflow_id, in: path, type: string}], call: naftiko-control.run-demo-workflow}]}
+    - {name: run, path: '/demos/{{workflow_id}}/run', operations: [{method: POST, name: run-demo, inputParameters: [{name: workflow_id, in: path, type: string}], call: naftiko-control.run-demo-workflow}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

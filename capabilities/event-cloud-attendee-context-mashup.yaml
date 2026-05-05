@@ -16,11 +16,11 @@ capability:
     authentication: {type: bearer, token: '{{EVENTBRITE_TOKEN}}'}
     resources:
     - name: event-attendees
-      path: /v3/events/{{event_id}}/attendees
+      path: '/v3/events/{{event_id}}/attendees'
       operations:
       - {name: list-attendees, method: GET, inputParameters: [{name: event_id, in: path}]}
     - name: attendee
-      path: /v3/events/{{event_id}}/attendees/{{attendee_id}}
+      path: '/v3/events/{{event_id}}/attendees/{{attendee_id}}'
       operations:
       - {name: get-attendee, method: GET, inputParameters: [{name: event_id, in: path}, {name: attendee_id, in: path}]}
   exposes:
@@ -30,7 +30,7 @@ capability:
     namespace: event-cloud-attendee-context-mashup-rest
     description: REST surface for attendee mashup.
     resources:
-    - {name: attendees, path: /events/{{event_id}}/attendees, operations: [{method: GET, name: list-attendees, inputParameters: [{name: event_id, in: path, type: string}], call: eventbrite.list-attendees}]}
+    - {name: attendees, path: '/events/{{event_id}}/attendees', operations: [{method: GET, name: list-attendees, inputParameters: [{name: event_id, in: path, type: string}], call: eventbrite.list-attendees}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

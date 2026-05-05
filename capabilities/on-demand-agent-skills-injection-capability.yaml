@@ -1,67 +1,57 @@
 naftiko: 1.0.0-alpha2
 info:
   title: On Demand Agent Skills Injection Capability
-  description: A capability that consumes a -generated agent skill manifest and exposes a single MCP tool that injects it on-demand into a coding agent's context.
-  tags:
-  - Naftiko
+  description: A capability that injects Agent Skills on-demand into a running agent runtime — pulled from the Naftiko skills registry.
+  tags: [Naftiko, Agent Skills, Injection]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-skills
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: skills, path: /v1/skills, operations: [{name: list-skills, method: GET}]}
+    - name: skill-bundle
+      path: /v1/skills/{{skill_id}}/bundle
       operations:
-      - name: example-op
-        method: GET
+      - {name: download-skill, method: GET, inputParameters: [{name: skill_id, in: path}]}
+    - {name: agent-skill-injection, path: /v1/agent-skill-injection, operations: [{name: inject-skill, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: on-demand-agent-skills-injection-capability-rest
-    description: REST API for On Demand Agent Skills Injection Capability.
+    description: REST surface for on-demand skill injection.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: inject, path: /inject, operations: [{method: POST, name: inject-skill, call: naftiko-skills.inject-skill}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: on-demand-agent-skills-injection-capability-mcp
-    description: MCP server exposing On Demand Agent Skills Injection Capability for AI agents.
+    description: MCP for skill injection.
     tools:
-    - name: example
-      description: A capability that consumes a -generated agent skill manifest and exposes a single MCP tool that injects it on-demand into a coding agent's context.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-skills, hints: {readOnly: true}, call: naftiko-skills.list-skills}
+    - {name: inject-skill, call: naftiko-skills.inject-skill}
+    - name: download-skill
+      hints: {readOnly: true}
+      inputParameters: [{name: skill_id, type: string, required: true}]
+      call: naftiko-skills.download-skill
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: on-demand-agent-skills-injection-capability-skills
-    description: Agent Skill bundle for On Demand Agent Skills Injection Capability.
+    description: Skill for skill injection.
     skills:
     - name: on-demand-agent-skills-injection-capability
-      description: A capability that consumes a -generated agent skill manifest and exposes a single MCP tool that injects it on-demand into a coding agent's context.
+      description: On-demand Agent Skill injection.
       location: file:///opt/naftiko/skills/on-demand-agent-skills-injection-capability
-      allowed-tools: example
+      allowed-tools: list-skills,inject-skill,download-skill
       tools:
-      - name: example
-        description: A capability that consumes a -generated agent skill manifest and exposes a single MCP tool that injects it on-demand into a coding agent's context.
-        from:
-          sourceNamespace: on-demand-agent-skills-injection-capability-mcp
-          action: example
+      - {name: list-skills, from: {sourceNamespace: on-demand-agent-skills-injection-capability-mcp, action: list-skills}}
+      - {name: inject-skill, from: {sourceNamespace: on-demand-agent-skills-injection-capability-mcp, action: inject-skill}}
+      - {name: download-skill, from: {sourceNamespace: on-demand-agent-skills-injection-capability-mcp, action: download-skill}}

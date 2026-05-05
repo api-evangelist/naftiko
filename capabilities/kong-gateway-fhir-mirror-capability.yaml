@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Kong Gateway Fhir Mirror Capability
-  description: A capability over a public FHIR/CMS Interoperability Final Rule endpoint, mirrored behind their Kong gateway with PII detection + HTTPS gates.
-  tags:
-  - Naftiko
+  description: A capability mirroring FHIR endpoints through a Kong gateway with rate-limit and audit policies for healthcare integrations.
+  tags: [Naftiko, Kong, FHIR, Healthcare]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: kong-env
+  keys: {KONG_HOST: KONG_HOST, KONG_TOKEN: KONG_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: kong
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{KONG_HOST}}
+    authentication: {type: bearer, token: '{{KONG_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: services, path: /services, operations: [{name: list-fhir-services, method: GET}]}
+    - name: service-routes
+      path: /services/{{service_id}}/routes
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-service-routes, method: GET, inputParameters: [{name: service_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: kong-gateway-fhir-mirror-capability-rest
-    description: REST API for Kong Gateway Fhir Mirror Capability.
+    description: REST surface for FHIR Kong mirror.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: services, path: /fhir-services, operations: [{method: GET, name: list-fhir-services, call: kong.list-fhir-services}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: kong-gateway-fhir-mirror-capability-mcp
-    description: MCP server exposing Kong Gateway Fhir Mirror Capability for AI agents.
+    description: MCP for FHIR Kong mirror.
     tools:
-    - name: example
-      description: A capability over a public FHIR/CMS Interoperability Final Rule endpoint, mirrored behind their Kong gateway with PII detection + HTTPS gates.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-fhir-services, hints: {readOnly: true}, call: kong.list-fhir-services}
+    - name: list-service-routes
+      hints: {readOnly: true}
+      inputParameters: [{name: service_id, type: string, required: true}]
+      call: kong.list-service-routes
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: kong-gateway-fhir-mirror-capability-skills
-    description: Agent Skill bundle for Kong Gateway Fhir Mirror Capability.
+    description: Skill for FHIR Kong mirror.
     skills:
     - name: kong-gateway-fhir-mirror-capability
-      description: A capability over a public FHIR/CMS Interoperability Final Rule endpoint, mirrored behind their Kong gateway with PII detection + HTTPS gates.
+      description: FHIR Kong gateway mirror.
       location: file:///opt/naftiko/skills/kong-gateway-fhir-mirror-capability
-      allowed-tools: example
+      allowed-tools: list-fhir-services,list-service-routes
       tools:
-      - name: example
-        description: A capability over a public FHIR/CMS Interoperability Final Rule endpoint, mirrored behind their Kong gateway with PII detection + HTTPS gates.
-        from:
-          sourceNamespace: kong-gateway-fhir-mirror-capability-mcp
-          action: example
+      - {name: list-fhir-services, from: {sourceNamespace: kong-gateway-fhir-mirror-capability-mcp, action: list-fhir-services}}
+      - {name: list-service-routes, from: {sourceNamespace: kong-gateway-fhir-mirror-capability-mcp, action: list-service-routes}}

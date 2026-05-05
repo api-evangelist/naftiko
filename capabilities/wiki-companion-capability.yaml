@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Wiki Companion Capability
-  description: A capability used as the running example in a new integration page in the framework wiki, alongside Guide-Linting and Tutorial-Part-1.
-  tags:
-  - Naftiko
+  description: A capability over a wiki (Confluence / GitHub Wiki) for AI-driven knowledge retrieval inside agent flows.
+  tags: [Naftiko, Wiki, Confluence]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: confluence-env
+  keys: {CONFLUENCE_HOST: CONFLUENCE_HOST, CONFLUENCE_USER: CONFLUENCE_USER, CONFLUENCE_TOKEN: CONFLUENCE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: confluence
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{CONFLUENCE_HOST}}
+    authentication: {type: basic, username: '{{CONFLUENCE_USER}}', password: '{{CONFLUENCE_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: search, path: /wiki/rest/api/search, operations: [{name: search-wiki, method: GET}]}
+    - name: page
+      path: /wiki/rest/api/content/{{page_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-page, method: GET, inputParameters: [{name: page_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: wiki-companion-capability-rest
-    description: REST API for Wiki Companion Capability.
+    description: REST surface for wiki companion.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: search, path: /search, operations: [{method: GET, name: search-wiki, call: confluence.search-wiki}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: wiki-companion-capability-mcp
-    description: MCP server exposing Wiki Companion Capability for AI agents.
+    description: MCP for wiki companion.
     tools:
-    - name: example
-      description: A capability used as the running example in a new integration page in the framework wiki, alongside Guide-Linting and Tutorial-Part-1.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: search-wiki, hints: {readOnly: true}, call: confluence.search-wiki}
+    - name: get-page
+      hints: {readOnly: true}
+      inputParameters: [{name: page_id, type: string, required: true}]
+      call: confluence.get-page
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: wiki-companion-capability-skills
-    description: Agent Skill bundle for Wiki Companion Capability.
+    description: Skill for wiki companion.
     skills:
     - name: wiki-companion-capability
-      description: A capability used as the running example in a new integration page in the framework wiki, alongside Guide-Linting and Tutorial-Part-1.
+      description: Wiki companion.
       location: file:///opt/naftiko/skills/wiki-companion-capability
-      allowed-tools: example
+      allowed-tools: search-wiki,get-page
       tools:
-      - name: example
-        description: A capability used as the running example in a new integration page in the framework wiki, alongside Guide-Linting and Tutorial-Part-1.
-        from:
-          sourceNamespace: wiki-companion-capability-mcp
-          action: example
+      - {name: search-wiki, from: {sourceNamespace: wiki-companion-capability-mcp, action: search-wiki}}
+      - {name: get-page, from: {sourceNamespace: wiki-companion-capability-mcp, action: get-page}}

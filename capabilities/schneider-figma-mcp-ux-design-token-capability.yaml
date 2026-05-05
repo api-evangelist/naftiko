@@ -1,67 +1,60 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Figma Mcp Ux Design Token Capability
-  description: A capability over Figma MCP scoped to design-token and component-metadata extraction for the UX layer of Schneider's developer workflow.
-  tags:
-  - Naftiko
+  description: Schneider Electric capability over Figma exposing design tokens (variables) as MCP for UX-engineering agents.
+  tags: [Naftiko, Schneider, Figma, Design Tokens]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: figma-env
+  keys: {FIGMA_TOKEN: FIGMA_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: figma
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.figma.com
+    authentication: {type: bearer, token: '{{FIGMA_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: variables
+      path: '/v1/files/{{file_key}}/variables/local'
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-local-variables, method: GET, inputParameters: [{name: file_key, in: path}]}
+    - name: styles
+      path: '/v1/files/{{file_key}}/styles'
+      operations:
+      - {name: list-styles, method: GET, inputParameters: [{name: file_key, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-figma-mcp-ux-design-token-capability-rest
-    description: REST API for Schneider Figma Mcp Ux Design Token Capability.
+    description: REST surface for Schneider Figma design tokens.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: tokens, path: '/tokens/{{file_key}}', operations: [{method: GET, name: list-design-tokens, inputParameters: [{name: file_key, in: path, type: string}], call: figma.list-local-variables}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-figma-mcp-ux-design-token-capability-mcp
-    description: MCP server exposing Schneider Figma Mcp Ux Design Token Capability for AI agents.
+    description: MCP for Schneider Figma design tokens.
     tools:
-    - name: example
-      description: A capability over Figma MCP scoped to design-token and component-metadata extraction for the UX layer of Schneider's developer workflow.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: list-design-tokens
+      hints: {readOnly: true}
+      inputParameters: [{name: file_key, type: string, required: true}]
+      call: figma.list-local-variables
+    - name: list-styles
+      hints: {readOnly: true}
+      inputParameters: [{name: file_key, type: string, required: true}]
+      call: figma.list-styles
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-figma-mcp-ux-design-token-capability-skills
-    description: Agent Skill bundle for Schneider Figma Mcp Ux Design Token Capability.
+    description: Skill for Schneider Figma design tokens.
     skills:
     - name: schneider-figma-mcp-ux-design-token-capability
-      description: A capability over Figma MCP scoped to design-token and component-metadata extraction for the UX layer of Schneider's developer workflow.
+      description: Schneider Figma design tokens.
       location: file:///opt/naftiko/skills/schneider-figma-mcp-ux-design-token-capability
-      allowed-tools: example
+      allowed-tools: list-design-tokens,list-styles
       tools:
-      - name: example
-        description: A capability over Figma MCP scoped to design-token and component-metadata extraction for the UX layer of Schneider's developer workflow.
-        from:
-          sourceNamespace: schneider-figma-mcp-ux-design-token-capability-mcp
-          action: example
+      - {name: list-design-tokens, from: {sourceNamespace: schneider-figma-mcp-ux-design-token-capability-mcp, action: list-design-tokens}}
+      - {name: list-styles, from: {sourceNamespace: schneider-figma-mcp-ux-design-token-capability-mcp, action: list-styles}}

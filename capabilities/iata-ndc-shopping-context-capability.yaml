@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Iata Ndc Shopping Context Capability
-  description: A capability over the IATA NDC airline-distribution surface that returns one shaped agent-context object for an customer-service AI assistant.
-  tags:
-  - Naftiko
+  description: A capability over the IATA NDC shopping flow — shape AirShopping/OfferPrice responses into a compact AI-friendly shopping context.
+  tags: [Naftiko, IATA NDC, Travel]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: ndc-env
+  keys: {NDC_HOST: NDC_HOST, NDC_TOKEN: NDC_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: ndc
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{NDC_HOST}}
+    authentication: {type: bearer, token: '{{NDC_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: air-shopping, path: /ndc/v21.3/AirShopping, operations: [{name: air-shopping, method: POST, description: NDC AirShopping request.}]}
+    - {name: offer-price, path: /ndc/v21.3/OfferPrice, operations: [{name: offer-price, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: iata-ndc-shopping-context-capability-rest
-    description: REST API for Iata Ndc Shopping Context Capability.
+    description: REST surface for shaped NDC shopping.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: shop, path: /shop, operations: [{method: POST, name: shop, description: Run an NDC AirShopping query and return shaped offers., call: ndc.air-shopping}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: iata-ndc-shopping-context-capability-mcp
-    description: MCP server exposing Iata Ndc Shopping Context Capability for AI agents.
+    description: MCP for NDC shopping.
     tools:
-    - name: example
-      description: A capability over the IATA NDC airline-distribution surface that returns one shaped agent-context object for an customer-service AI assistant.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: shop, call: ndc.air-shopping}
+    - {name: price-offer, call: ndc.offer-price}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: iata-ndc-shopping-context-capability-skills
-    description: Agent Skill bundle for Iata Ndc Shopping Context Capability.
+    description: Skill for NDC shopping.
     skills:
     - name: iata-ndc-shopping-context-capability
-      description: A capability over the IATA NDC airline-distribution surface that returns one shaped agent-context object for an customer-service AI assistant.
+      description: IATA NDC shaped shopping context.
       location: file:///opt/naftiko/skills/iata-ndc-shopping-context-capability
-      allowed-tools: example
+      allowed-tools: shop,price-offer
       tools:
-      - name: example
-        description: A capability over the IATA NDC airline-distribution surface that returns one shaped agent-context object for an customer-service AI assistant.
-        from:
-          sourceNamespace: iata-ndc-shopping-context-capability-mcp
-          action: example
+      - {name: shop, from: {sourceNamespace: iata-ndc-shopping-context-capability-mcp, action: shop}}
+      - {name: price-offer, from: {sourceNamespace: iata-ndc-shopping-context-capability-mcp, action: price-offer}}

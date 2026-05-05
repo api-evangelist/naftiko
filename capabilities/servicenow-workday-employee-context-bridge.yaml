@@ -1,67 +1,63 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Servicenow Workday Employee Context Bridge
-  description: A composed capability across ServiceNow + Workday for an employee-context HR-AI agent at charitable arm, with /metrics + /health exposed.
-  tags:
-  - Naftiko
+  description: A bridge composing ServiceNow tickets with Workday employee data into a unified employee-support context.
+  tags: [Naftiko, ServiceNow, Workday]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: servicenow-env
+  keys: {SN_HOST: SN_HOST, SN_USER: SN_USER, SN_PASSWORD: SN_PASSWORD}
+- namespace: workday-env
+  keys: {WORKDAY_HOST: WORKDAY_HOST, WORKDAY_TOKEN: WORKDAY_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: servicenow
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SN_HOST}}
+    authentication: {type: basic, username: '{{SN_USER}}', password: '{{SN_PASSWORD}}'}
     resources:
-    - name: example
-      path: /example
+    - name: tickets-for-user
+      path: /api/now/table/incident
+      operations: [{name: list-tickets-for-user, method: GET}]
+  - namespace: workday
+    type: http
+    baseUri: https://{{WORKDAY_HOST}}
+    authentication: {type: bearer, token: '{{WORKDAY_TOKEN}}'}
+    resources:
+    - name: worker
+      path: '/ccx/api/v1/workers/{{worker_id}}'
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-worker, method: GET, inputParameters: [{name: worker_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: servicenow-workday-employee-context-bridge-rest
-    description: REST API for Servicenow Workday Employee Context Bridge.
+    description: REST surface for employee support context.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: employee-context, path: '/employees/{{worker_id}}/context', operations: [{method: GET, name: get-employee-context, inputParameters: [{name: worker_id, in: path, type: string}], call: workday.get-worker}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: servicenow-workday-employee-context-bridge-mcp
-    description: MCP server exposing Servicenow Workday Employee Context Bridge for AI agents.
+    description: MCP for employee context.
     tools:
-    - name: example
-      description: A composed capability across ServiceNow + Workday for an employee-context HR-AI agent at charitable arm, with /metrics + /health exposed.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-employee-context
+      hints: {readOnly: true}
+      inputParameters: [{name: worker_id, type: string, required: true}]
+      call: workday.get-worker
+    - {name: list-tickets-for-user, hints: {readOnly: true}, call: servicenow.list-tickets-for-user}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: servicenow-workday-employee-context-bridge-skills
-    description: Agent Skill bundle for Servicenow Workday Employee Context Bridge.
+    description: Skill for employee context.
     skills:
     - name: servicenow-workday-employee-context-bridge
-      description: A composed capability across ServiceNow + Workday for an employee-context HR-AI agent at charitable arm, with /metrics + /health exposed.
+      description: ServiceNow + Workday employee context.
       location: file:///opt/naftiko/skills/servicenow-workday-employee-context-bridge
-      allowed-tools: example
+      allowed-tools: get-employee-context,list-tickets-for-user
       tools:
-      - name: example
-        description: A composed capability across ServiceNow + Workday for an employee-context HR-AI agent at charitable arm, with /metrics + /health exposed.
-        from:
-          sourceNamespace: servicenow-workday-employee-context-bridge-mcp
-          action: example
+      - {name: get-employee-context, from: {sourceNamespace: servicenow-workday-employee-context-bridge-mcp, action: get-employee-context}}
+      - {name: list-tickets-for-user, from: {sourceNamespace: servicenow-workday-employee-context-bridge-mcp, action: list-tickets-for-user}}

@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Salesforce Event To Opportunity Bridge
-  description: A capability that consumes a attendee event and pushes it as a Salesforce Opportunity update via Salesforce Lightning, with shaped agent output for sales follow-up.
-  tags:
-  - Naftiko
+  description: A bridge capability that converts external events (webform, registration, intent) into Salesforce Opportunity records.
+  tags: [Naftiko, Salesforce, Opportunity]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: salesforce-env
+  keys: {SF_HOST: SF_HOST, SF_TOKEN: SF_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: salesforce
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SF_HOST}}
+    authentication: {type: bearer, token: '{{SF_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: opportunities, path: /services/data/v60.0/sobjects/Opportunity, operations: [{name: create-opportunity, method: POST}]}
+    - name: opportunity
+      path: /services/data/v60.0/sobjects/Opportunity/{{id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-opportunity, method: GET, inputParameters: [{name: id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: salesforce-event-to-opportunity-bridge-rest
-    description: REST API for Salesforce Event To Opportunity Bridge.
+    description: REST surface for event→opportunity bridge.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: bridge, path: /bridge, operations: [{method: POST, name: bridge-event-to-opportunity, call: salesforce.create-opportunity}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: salesforce-event-to-opportunity-bridge-mcp
-    description: MCP server exposing Salesforce Event To Opportunity Bridge for AI agents.
+    description: MCP for event→opportunity bridge.
     tools:
-    - name: example
-      description: A capability that consumes a attendee event and pushes it as a Salesforce Opportunity update via Salesforce Lightning, with shaped agent output for sales follow-up.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: bridge-event-to-opportunity, call: salesforce.create-opportunity}
+    - name: get-opportunity
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: salesforce.get-opportunity
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: salesforce-event-to-opportunity-bridge-skills
-    description: Agent Skill bundle for Salesforce Event To Opportunity Bridge.
+    description: Skill for event→opportunity bridge.
     skills:
     - name: salesforce-event-to-opportunity-bridge
-      description: A capability that consumes a attendee event and pushes it as a Salesforce Opportunity update via Salesforce Lightning, with shaped agent output for sales follow-up.
+      description: Event→Opportunity bridge.
       location: file:///opt/naftiko/skills/salesforce-event-to-opportunity-bridge
-      allowed-tools: example
+      allowed-tools: bridge-event-to-opportunity,get-opportunity
       tools:
-      - name: example
-        description: A capability that consumes a attendee event and pushes it as a Salesforce Opportunity update via Salesforce Lightning, with shaped agent output for sales follow-up.
-        from:
-          sourceNamespace: salesforce-event-to-opportunity-bridge-mcp
-          action: example
+      - {name: bridge-event-to-opportunity, from: {sourceNamespace: salesforce-event-to-opportunity-bridge-mcp, action: bridge-event-to-opportunity}}
+      - {name: get-opportunity, from: {sourceNamespace: salesforce-event-to-opportunity-bridge-mcp, action: get-opportunity}}

@@ -1,67 +1,51 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider A2a Orchestration Roadmap Demo
-  description: A capability collection demonstrating the Agent-to-Agent (A2A) orchestration roadmap in concrete terms, sized to the Schneider scale conversation.
-  tags:
-  - Naftiko
+  description: Schneider Electric demo capability for A2A (agent-to-agent) orchestration roadmap — coordinated agent calls across Naftiko capabilities.
+  tags: [Naftiko, Schneider, A2A, Demo]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: orchestrations, path: /v1/orchestrations, operations: [{name: list-orchestrations, method: GET}, {name: start-orchestration, method: POST}]}
+    - name: orchestration
+      path: /v1/orchestrations/{{run_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-orchestration, method: GET, inputParameters: [{name: run_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-a2a-orchestration-roadmap-demo-rest
-    description: REST API for Schneider A2a Orchestration Roadmap Demo.
+    description: REST surface for A2A orchestration.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: orchestrate, path: /orchestrate, operations: [{method: POST, name: start-orchestration, call: naftiko-control.start-orchestration}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-a2a-orchestration-roadmap-demo-mcp
-    description: MCP server exposing Schneider A2a Orchestration Roadmap Demo for AI agents.
+    description: MCP for A2A orchestration.
     tools:
-    - name: example
-      description: A capability collection demonstrating the Agent-to-Agent (A2A) orchestration roadmap in concrete terms, sized to the Schneider scale conversation.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-orchestrations, hints: {readOnly: true}, call: naftiko-control.list-orchestrations}
+    - {name: start-orchestration, call: naftiko-control.start-orchestration}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-a2a-orchestration-roadmap-demo-skills
-    description: Agent Skill bundle for Schneider A2a Orchestration Roadmap Demo.
+    description: Skill for A2A orchestration.
     skills:
     - name: schneider-a2a-orchestration-roadmap-demo
-      description: A capability collection demonstrating the Agent-to-Agent (A2A) orchestration roadmap in concrete terms, sized to the Schneider scale conversation.
+      description: A2A orchestration demo.
       location: file:///opt/naftiko/skills/schneider-a2a-orchestration-roadmap-demo
-      allowed-tools: example
+      allowed-tools: list-orchestrations,start-orchestration
       tools:
-      - name: example
-        description: A capability collection demonstrating the Agent-to-Agent (A2A) orchestration roadmap in concrete terms, sized to the Schneider scale conversation.
-        from:
-          sourceNamespace: schneider-a2a-orchestration-roadmap-demo-mcp
-          action: example
+      - {name: list-orchestrations, from: {sourceNamespace: schneider-a2a-orchestration-roadmap-demo-mcp, action: list-orchestrations}}
+      - {name: start-orchestration, from: {sourceNamespace: schneider-a2a-orchestration-roadmap-demo-mcp, action: start-orchestration}}

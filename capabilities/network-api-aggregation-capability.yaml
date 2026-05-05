@@ -1,67 +1,63 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Network Api Aggregation Capability
-  description: A capability over Network APIs (Ericsson-aggregated carrier-network surfaces — number verification, location, device status) exposing carrier-grade governed reads as MCP.
-  tags:
-  - Naftiko
+  description: A capability that aggregates network APIs (Cisco DNA, Meraki, Aruba) into a unified network-state surface for ops agents.
+  tags: [Naftiko, Network, Aggregation]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: meraki-env
+  keys: {MERAKI_TOKEN: MERAKI_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: meraki
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.meraki.com
+    authentication: {type: bearer, token: '{{MERAKI_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: organizations, path: /api/v1/organizations, operations: [{name: list-organizations, method: GET}]}
+    - name: networks
+      path: /api/v1/organizations/{{org_id}}/networks
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-networks, method: GET, inputParameters: [{name: org_id, in: path}]}
+    - name: network-devices
+      path: /api/v1/networks/{{network_id}}/devices
+      operations:
+      - {name: list-devices, method: GET, inputParameters: [{name: network_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: network-api-aggregation-capability-rest
-    description: REST API for Network Api Aggregation Capability.
+    description: REST surface for aggregated network state.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: networks, path: /networks, operations: [{method: GET, name: list-networks, call: meraki.list-organizations}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: network-api-aggregation-capability-mcp
-    description: MCP server exposing Network Api Aggregation Capability for AI agents.
+    description: MCP for aggregated network state.
     tools:
-    - name: example
-      description: A capability over Network APIs (Ericsson-aggregated carrier-network surfaces — number verification, location, device status) exposing carrier-grade governed reads as MCP.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-organizations, hints: {readOnly: true}, call: meraki.list-organizations}
+    - name: list-networks
+      hints: {readOnly: true}
+      inputParameters: [{name: org_id, type: string, required: true}]
+      call: meraki.list-networks
+    - name: list-devices
+      hints: {readOnly: true}
+      inputParameters: [{name: network_id, type: string, required: true}]
+      call: meraki.list-devices
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: network-api-aggregation-capability-skills
-    description: Agent Skill bundle for Network Api Aggregation Capability.
+    description: Skill for network aggregation.
     skills:
     - name: network-api-aggregation-capability
-      description: A capability over Network APIs (Ericsson-aggregated carrier-network surfaces — number verification, location, device status) exposing carrier-grade governed reads as MCP.
+      description: Network API aggregation.
       location: file:///opt/naftiko/skills/network-api-aggregation-capability
-      allowed-tools: example
+      allowed-tools: list-organizations,list-networks,list-devices
       tools:
-      - name: example
-        description: A capability over Network APIs (Ericsson-aggregated carrier-network surfaces — number verification, location, device status) exposing carrier-grade governed reads as MCP.
-        from:
-          sourceNamespace: network-api-aggregation-capability-mcp
-          action: example
+      - {name: list-organizations, from: {sourceNamespace: network-api-aggregation-capability-mcp, action: list-organizations}}
+      - {name: list-networks, from: {sourceNamespace: network-api-aggregation-capability-mcp, action: list-networks}}
+      - {name: list-devices, from: {sourceNamespace: network-api-aggregation-capability-mcp, action: list-devices}}

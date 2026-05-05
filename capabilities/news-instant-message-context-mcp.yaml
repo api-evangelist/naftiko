@@ -1,67 +1,61 @@
 naftiko: 1.0.0-alpha2
 info:
   title: News Instant Message Context Mcp
-  description: A capability that joins News headlines + Instant Messaging (IB) thread context into one MCP-callable agent tool for an internal trading-floor assistant.
-  tags:
-  - Naftiko
+  description: A capability composing news headlines (Bloomberg, Reuters) with Slack/Teams instant messages into one shaped market-news context.
+  tags: [Naftiko, News, IM, Context]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: bloomberg-env
+  keys: {BLOOMBERG_TOKEN: BLOOMBERG_TOKEN}
+- namespace: slack-env
+  keys: {SLACK_TOKEN: SLACK_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: bloomberg-news
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.bloomberg.com
+    authentication: {type: bearer, token: '{{BLOOMBERG_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: news, path: /eap/news/v1/headlines, operations: [{name: get-news-headlines, method: GET}]}
+  - namespace: slack
+    type: http
+    baseUri: https://slack.com
+    authentication: {type: bearer, token: '{{SLACK_TOKEN}}'}
+    resources:
+    - name: conversation-history
+      path: /api/conversations.history
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-channel-history, method: GET, inputParameters: [{name: channel, in: query}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: news-instant-message-context-mcp-rest
-    description: REST API for News Instant Message Context Mcp.
+    description: REST surface for news + IM context.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: market-news-context, path: /market-news-context, operations: [{method: GET, name: get-market-news-context, call: bloomberg-news.get-news-headlines}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: news-instant-message-context-mcp-mcp
-    description: MCP server exposing News Instant Message Context Mcp for AI agents.
+    description: MCP for news + IM context.
     tools:
-    - name: example
-      description: A capability that joins News headlines + Instant Messaging (IB) thread context into one MCP-callable agent tool for an internal trading-floor assistant.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-news-headlines, hints: {readOnly: true}, call: bloomberg-news.get-news-headlines}
+    - name: get-channel-history
+      hints: {readOnly: true}
+      inputParameters: [{name: channel, type: string, required: true}]
+      call: slack.get-channel-history
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: news-instant-message-context-mcp-skills
-    description: Agent Skill bundle for News Instant Message Context Mcp.
+    description: Skill for news + IM context.
     skills:
     - name: news-instant-message-context-mcp
-      description: A capability that joins News headlines + Instant Messaging (IB) thread context into one MCP-callable agent tool for an internal trading-floor assistant.
+      description: News + IM market context.
       location: file:///opt/naftiko/skills/news-instant-message-context-mcp
-      allowed-tools: example
+      allowed-tools: get-news-headlines,get-channel-history
       tools:
-      - name: example
-        description: A capability that joins News headlines + Instant Messaging (IB) thread context into one MCP-callable agent tool for an internal trading-floor assistant.
-        from:
-          sourceNamespace: news-instant-message-context-mcp-mcp
-          action: example
+      - {name: get-news-headlines, from: {sourceNamespace: news-instant-message-context-mcp-mcp, action: get-news-headlines}}
+      - {name: get-channel-history, from: {sourceNamespace: news-instant-message-context-mcp-mcp, action: get-channel-history}}

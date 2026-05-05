@@ -26,14 +26,14 @@ capability:
     authentication: {type: bearer, token: '{{AZURE_TOKEN}}'}
     resources:
     - name: cost-management
-      path: /subscriptions/{{AZURE_SUBSCRIPTION}}/providers/Microsoft.CostManagement/query
+      path: '/subscriptions/{{AZURE_SUBSCRIPTION}}/providers/Microsoft.CostManagement/query'
       operations: [{name: query-azure-costs, method: POST}]
   - namespace: gcp-billing
     type: http
     baseUri: https://cloudbilling.googleapis.com
     authentication: {type: bearer, token: '{{GCP_TOKEN}}'}
     resources:
-    - {name: projects, path: /v1/projects/{{GCP_PROJECT}}/billingInfo, operations: [{name: get-billing-info, method: GET}]}
+    - {name: projects, path: '/v1/projects/{{GCP_PROJECT}}/billingInfo', operations: [{name: get-billing-info, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0

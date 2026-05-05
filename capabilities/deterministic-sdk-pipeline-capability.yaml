@@ -17,7 +17,7 @@ capability:
     resources:
     - {name: workspaces, path: /v1/workspaces, operations: [{name: list-workspaces, method: GET}]}
     - name: sdk-generation
-      path: /v1/workspaces/{{workspace_id}}/generate
+      path: '/v1/workspaces/{{workspace_id}}/generate'
       operations:
       - {name: generate-sdks, method: POST, inputParameters: [{name: workspace_id, in: path}]}
   exposes:
@@ -27,7 +27,7 @@ capability:
     namespace: deterministic-sdk-pipeline-capability-rest
     description: REST surface for SDK generation.
     resources:
-    - {name: generate, path: /generate/{{workspace_id}}, operations: [{method: POST, name: generate-sdks, inputParameters: [{name: workspace_id, in: path, type: string}], call: speakeasy.generate-sdks}]}
+    - {name: generate, path: '/generate/{{workspace_id}}', operations: [{method: POST, name: generate-sdks, inputParameters: [{name: workspace_id, in: path, type: string}], call: speakeasy.generate-sdks}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

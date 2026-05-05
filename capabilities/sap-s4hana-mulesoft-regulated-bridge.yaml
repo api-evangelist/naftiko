@@ -1,67 +1,55 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Sap S4hana Mulesoft Regulated Bridge
-  description: A capability over SAP S/4HANA fronted by MuleSoft, governance-tagged for regulated-industry use as the artifact-led re-nudge.
-  tags:
-  - Naftiko
+  description: A regulated bridge capability fronting SAP S/4HANA via MuleSoft with audit + retention policies enforced.
+  tags: [Naftiko, SAP, MuleSoft, Regulated]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: mulesoft-env
+  keys: {MULESOFT_TOKEN: MULESOFT_TOKEN}
+- namespace: sap-s4-env
+  keys: {SAP_S4_HOST: SAP_S4_HOST, SAP_S4_TOKEN: SAP_S4_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: mulesoft
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://anypoint.mulesoft.com
+    authentication: {type: bearer, token: '{{MULESOFT_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: applications, path: /cloudhub/api/v2/applications, operations: [{name: list-applications, method: GET}]}
+  - namespace: sap-s4
+    type: http
+    baseUri: https://{{SAP_S4_HOST}}
+    authentication: {type: bearer, token: '{{SAP_S4_TOKEN}}'}
+    resources:
+    - {name: business-partners, path: /sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner, operations: [{name: list-business-partners, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: sap-s4hana-mulesoft-regulated-bridge-rest
-    description: REST API for Sap S4hana Mulesoft Regulated Bridge.
+    description: Regulated bridge surface.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: business-partners, path: /business-partners, operations: [{method: GET, name: list-governed-business-partners, call: sap-s4.list-business-partners}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: sap-s4hana-mulesoft-regulated-bridge-mcp
-    description: MCP server exposing Sap S4hana Mulesoft Regulated Bridge for AI agents.
+    description: MCP for regulated bridge.
     tools:
-    - name: example
-      description: A capability over SAP S/4HANA fronted by MuleSoft, governance-tagged for regulated-industry use as the artifact-led re-nudge.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-governed-business-partners, hints: {readOnly: true}, call: sap-s4.list-business-partners}
+    - {name: list-mulesoft-applications, hints: {readOnly: true}, call: mulesoft.list-applications}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: sap-s4hana-mulesoft-regulated-bridge-skills
-    description: Agent Skill bundle for Sap S4hana Mulesoft Regulated Bridge.
+    description: Skill for regulated bridge.
     skills:
     - name: sap-s4hana-mulesoft-regulated-bridge
-      description: A capability over SAP S/4HANA fronted by MuleSoft, governance-tagged for regulated-industry use as the artifact-led re-nudge.
+      description: Regulated SAP S/4HANA + MuleSoft bridge.
       location: file:///opt/naftiko/skills/sap-s4hana-mulesoft-regulated-bridge
-      allowed-tools: example
+      allowed-tools: list-governed-business-partners,list-mulesoft-applications
       tools:
-      - name: example
-        description: A capability over SAP S/4HANA fronted by MuleSoft, governance-tagged for regulated-industry use as the artifact-led re-nudge.
-        from:
-          sourceNamespace: sap-s4hana-mulesoft-regulated-bridge-mcp
-          action: example
+      - {name: list-governed-business-partners, from: {sourceNamespace: sap-s4hana-mulesoft-regulated-bridge-mcp, action: list-governed-business-partners}}
+      - {name: list-mulesoft-applications, from: {sourceNamespace: sap-s4hana-mulesoft-regulated-bridge-mcp, action: list-mulesoft-applications}}

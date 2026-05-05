@@ -1,67 +1,50 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Hugging Face Model Inference Governed Capability
-  description: A capability over a Hugging Face inference endpoint with PII detection + agent-safety tags + Datadog metrics — the ML-output-shaping podcast topic.
-  tags:
-  - Naftiko
+  description: A governed capability over Hugging Face Inference API — every inference call passes through Naftiko governance with usage and audit logged.
+  tags: [Naftiko, Hugging Face, Inference]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: huggingface-env
+  keys: {HF_TOKEN: HF_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: huggingface
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api-inference.huggingface.co
+    authentication: {type: bearer, token: '{{HF_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: model-inference
+      path: '/models/{{model_id}}'
       operations:
-      - name: example-op
-        method: GET
+      - {name: run-inference, method: POST, inputParameters: [{name: model_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: hugging-face-model-inference-governed-capability-rest
-    description: REST API for Hugging Face Model Inference Governed Capability.
+    description: Governed Hugging Face inference surface.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: infer, path: '/infer/{{model_id}}', operations: [{method: POST, name: run-governed-inference, inputParameters: [{name: model_id, in: path, type: string}], call: huggingface.run-inference}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: hugging-face-model-inference-governed-capability-mcp
-    description: MCP server exposing Hugging Face Model Inference Governed Capability for AI agents.
+    description: MCP for governed HF inference.
     tools:
-    - name: example
-      description: A capability over a Hugging Face inference endpoint with PII detection + agent-safety tags + Datadog metrics — the ML-output-shaping podcast topic.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: run-governed-inference
+      inputParameters: [{name: model_id, type: string, required: true}]
+      call: huggingface.run-inference
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: hugging-face-model-inference-governed-capability-skills
-    description: Agent Skill bundle for Hugging Face Model Inference Governed Capability.
+    description: Skill for governed HF inference.
     skills:
     - name: hugging-face-model-inference-governed-capability
-      description: A capability over a Hugging Face inference endpoint with PII detection + agent-safety tags + Datadog metrics — the ML-output-shaping podcast topic.
+      description: Governed Hugging Face inference.
       location: file:///opt/naftiko/skills/hugging-face-model-inference-governed-capability
-      allowed-tools: example
+      allowed-tools: run-governed-inference
       tools:
-      - name: example
-        description: A capability over a Hugging Face inference endpoint with PII detection + agent-safety tags + Datadog metrics — the ML-output-shaping podcast topic.
-        from:
-          sourceNamespace: hugging-face-model-inference-governed-capability-mcp
-          action: example
+      - {name: run-governed-inference, from: {sourceNamespace: hugging-face-model-inference-governed-capability-mcp, action: run-governed-inference}}

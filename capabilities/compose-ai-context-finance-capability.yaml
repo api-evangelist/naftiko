@@ -17,7 +17,7 @@ capability:
     resources:
     - {name: bql, path: /eap/bql/v1/query, operations: [{name: run-bql, method: POST}]}
     - name: market-data
-      path: /eap/marketdata/v1/securities/{{security_id}}/quote
+      path: '/eap/marketdata/v1/securities/{{security_id}}/quote'
       operations:
       - {name: get-quote, method: GET, inputParameters: [{name: security_id, in: path}]}
   exposes:
@@ -27,7 +27,7 @@ capability:
     namespace: compose-ai-context-finance-capability-rest
     description: REST surface for composed finance AI context.
     resources:
-    - {name: ai-context, path: /finance-ai-context/{{security_id}}, operations: [{method: GET, name: get-finance-ai-context, inputParameters: [{name: security_id, in: path, type: string}], call: bloomberg.get-quote}]}
+    - {name: ai-context, path: '/finance-ai-context/{{security_id}}', operations: [{method: GET, name: get-finance-ai-context, inputParameters: [{name: security_id, in: path, type: string}], call: bloomberg.get-quote}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

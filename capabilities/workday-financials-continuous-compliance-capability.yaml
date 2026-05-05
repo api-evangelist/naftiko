@@ -1,67 +1,50 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Workday Financials Continuous Compliance Capability
-  description: A capability over Workday Financials that activates Continuous Compliance (CCF-style) with NIST/SOC2/PCI/GDPR scoring as the audit-practice artifact.
-  tags:
-  - Naftiko
+  description: A capability over Workday Financials with continuous-compliance checks enforced on every read/write.
+  tags: [Naftiko, Workday, Financials, CCF]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: workday-env
+  keys: {WORKDAY_HOST: WORKDAY_HOST, WORKDAY_TOKEN: WORKDAY_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: workday
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{WORKDAY_HOST}}
+    authentication: {type: bearer, token: '{{WORKDAY_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: ledger-accounts, path: /ccx/api/financialManagement/v1/ledgerAccounts, operations: [{name: list-ledger-accounts, method: GET}]}
+    - name: journal-entries
+      path: /ccx/api/financialManagement/v1/journalEntries
+      operations: [{name: list-journal-entries, method: GET}]
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: workday-financials-continuous-compliance-capability-rest
-    description: REST API for Workday Financials Continuous Compliance Capability.
+    description: REST surface for governed Workday Financials.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: ledger, path: /ledger-accounts, operations: [{method: GET, name: list-ledger-accounts, call: workday.list-ledger-accounts}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: workday-financials-continuous-compliance-capability-mcp
-    description: MCP server exposing Workday Financials Continuous Compliance Capability for AI agents.
+    description: MCP for governed Workday Financials.
     tools:
-    - name: example
-      description: A capability over Workday Financials that activates Continuous Compliance (CCF-style) with NIST/SOC2/PCI/GDPR scoring as the audit-practice artifact.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-ledger-accounts, hints: {readOnly: true}, call: workday.list-ledger-accounts}
+    - {name: list-journal-entries, hints: {readOnly: true}, call: workday.list-journal-entries}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: workday-financials-continuous-compliance-capability-skills
-    description: Agent Skill bundle for Workday Financials Continuous Compliance Capability.
+    description: Skill for governed Workday Financials.
     skills:
     - name: workday-financials-continuous-compliance-capability
-      description: A capability over Workday Financials that activates Continuous Compliance (CCF-style) with NIST/SOC2/PCI/GDPR scoring as the audit-practice artifact.
+      description: Governed Workday Financials.
       location: file:///opt/naftiko/skills/workday-financials-continuous-compliance-capability
-      allowed-tools: example
+      allowed-tools: list-ledger-accounts,list-journal-entries
       tools:
-      - name: example
-        description: A capability over Workday Financials that activates Continuous Compliance (CCF-style) with NIST/SOC2/PCI/GDPR scoring as the audit-practice artifact.
-        from:
-          sourceNamespace: workday-financials-continuous-compliance-capability-mcp
-          action: example
+      - {name: list-ledger-accounts, from: {sourceNamespace: workday-financials-continuous-compliance-capability-mcp, action: list-ledger-accounts}}
+      - {name: list-journal-entries, from: {sourceNamespace: workday-financials-continuous-compliance-capability-mcp, action: list-journal-entries}}

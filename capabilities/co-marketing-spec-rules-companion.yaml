@@ -15,9 +15,9 @@ capability:
     baseUri: https://api.stoplight.io
     authentication: {type: bearer, token: '{{STOPLIGHT_TOKEN}}'}
     resources:
-    - {name: lint, path: /v1/projects/{{project_id}}/lint, operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
+    - {name: lint, path: '/v1/projects/{{project_id}}/lint', operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
     - name: ruleset
-      path: /v1/rulesets/{{ruleset_id}}
+      path: '/v1/rulesets/{{ruleset_id}}'
       operations:
       - {name: get-ruleset, method: GET, inputParameters: [{name: ruleset_id, in: path}]}
   exposes:

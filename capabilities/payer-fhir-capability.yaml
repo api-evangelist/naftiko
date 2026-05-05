@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Payer Fhir Capability
-  description: A healthcare-payer capability (HIPAA-shaped, FHIR-adjacent) wrapping a representative -public API, with PII surface detection + HTTPS enforcement governance.
-  tags:
-  - Naftiko
+  description: A FHIR capability over a payer (insurance) backend exposing Patient, Coverage, ExplanationOfBenefit as governed REST + MCP.
+  tags: [Naftiko, FHIR, Payer]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: fhir-env
+  keys: {FHIR_HOST: FHIR_HOST, FHIR_TOKEN: FHIR_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: fhir
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{FHIR_HOST}}
+    authentication: {type: bearer, token: '{{FHIR_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: patient, path: '/Patient/{{id}}', operations: [{name: get-patient, method: GET, inputParameters: [{name: id, in: path}]}]}
+    - {name: coverage, path: /Coverage, operations: [{name: search-coverage, method: GET}]}
+    - {name: eob, path: /ExplanationOfBenefit, operations: [{name: search-eob, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: payer-fhir-capability-rest
-    description: REST API for Payer Fhir Capability.
+    description: Governed payer FHIR surface.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: patient, path: '/patients/{{id}}', operations: [{method: GET, name: get-patient, inputParameters: [{name: id, in: path, type: string}], call: fhir.get-patient}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: payer-fhir-capability-mcp
-    description: MCP server exposing Payer Fhir Capability for AI agents.
+    description: MCP for payer FHIR.
     tools:
-    - name: example
-      description: A healthcare-payer capability (HIPAA-shaped, FHIR-adjacent) wrapping a representative -public API, with PII surface detection + HTTPS enforcement governance.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-patient
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: fhir.get-patient
+    - {name: search-coverage, hints: {readOnly: true}, call: fhir.search-coverage}
+    - {name: search-eob, hints: {readOnly: true}, call: fhir.search-eob}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: payer-fhir-capability-skills
-    description: Agent Skill bundle for Payer Fhir Capability.
+    description: Skill for payer FHIR.
     skills:
     - name: payer-fhir-capability
-      description: A healthcare-payer capability (HIPAA-shaped, FHIR-adjacent) wrapping a representative -public API, with PII surface detection + HTTPS enforcement governance.
+      description: Payer FHIR access.
       location: file:///opt/naftiko/skills/payer-fhir-capability
-      allowed-tools: example
+      allowed-tools: get-patient,search-coverage,search-eob
       tools:
-      - name: example
-        description: A healthcare-payer capability (HIPAA-shaped, FHIR-adjacent) wrapping a representative -public API, with PII surface detection + HTTPS enforcement governance.
-        from:
-          sourceNamespace: payer-fhir-capability-mcp
-          action: example
+      - {name: get-patient, from: {sourceNamespace: payer-fhir-capability-mcp, action: get-patient}}
+      - {name: search-coverage, from: {sourceNamespace: payer-fhir-capability-mcp, action: search-coverage}}
+      - {name: search-eob, from: {sourceNamespace: payer-fhir-capability-mcp, action: search-eob}}

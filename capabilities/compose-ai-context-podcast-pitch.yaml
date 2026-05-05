@@ -16,7 +16,7 @@ capability:
     authentication: {type: bearer, token: '{{HUBSPOT_TOKEN}}'}
     resources:
     - name: contact
-      path: /crm/v3/objects/contacts/{{contact_id}}
+      path: '/crm/v3/objects/contacts/{{contact_id}}'
       operations:
       - {name: get-contact, method: GET, inputParameters: [{name: contact_id, in: path}]}
     - {name: contacts-search, path: /crm/v3/objects/contacts/search, operations: [{name: search-contacts, method: POST}]}
@@ -27,7 +27,7 @@ capability:
     namespace: compose-ai-context-podcast-pitch-rest
     description: REST surface for podcast pitch AI context.
     resources:
-    - {name: pitch-context, path: /pitch-context/{{contact_id}}, operations: [{method: GET, name: get-pitch-context, inputParameters: [{name: contact_id, in: path, type: string}], call: hubspot.get-contact}]}
+    - {name: pitch-context, path: '/pitch-context/{{contact_id}}', operations: [{method: GET, name: get-pitch-context, inputParameters: [{name: contact_id, in: path, type: string}], call: hubspot.get-contact}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

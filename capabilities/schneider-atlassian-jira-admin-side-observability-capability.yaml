@@ -1,67 +1,51 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Atlassian Jira Admin Side Observability Capability
-  description: A capability that wraps Atlassian Jira MCP with admin-side observability — agent-attribution, hot endpoints, call-rate, sized-for-API-administrator dashboards — answering the "API administration angle" pain Manu articulated.
-  tags:
-  - Naftiko
+  description: Schneider Electric admin-side observability over Atlassian Jira — projects, issues, audit logs as observability streams.
+  tags: [Naftiko, Schneider, Jira, Observability]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: jira-env
+  keys: {JIRA_HOST: JIRA_HOST, JIRA_USER: JIRA_USER, JIRA_TOKEN: JIRA_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: jira
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{JIRA_HOST}}
+    authentication: {type: basic, username: '{{JIRA_USER}}', password: '{{JIRA_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: projects, path: /rest/api/3/project, operations: [{name: list-projects, method: GET}]}
+    - {name: search-issues, path: /rest/api/3/search, operations: [{name: search-issues, method: GET}]}
+    - {name: audit-records, path: /rest/api/3/auditing/record, operations: [{name: list-audit-records, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-atlassian-jira-admin-side-observability-capability-rest
-    description: REST API for Schneider Atlassian Jira Admin Side Observability Capability.
+    description: REST surface for Jira admin observability.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: audit, path: /audit, operations: [{method: GET, name: list-audit-records, call: jira.list-audit-records}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-atlassian-jira-admin-side-observability-capability-mcp
-    description: MCP server exposing Schneider Atlassian Jira Admin Side Observability Capability for AI agents.
+    description: MCP for Jira admin observability.
     tools:
-    - name: example
-      description: A capability that wraps Atlassian Jira MCP with admin-side observability — agent-attribution, hot endpoints, call-rate, sized-for-API-administrator dashboards — answering the "API administration angle" pain Manu articulated.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-projects, hints: {readOnly: true}, call: jira.list-projects}
+    - {name: search-issues, hints: {readOnly: true}, call: jira.search-issues}
+    - {name: list-audit-records, hints: {readOnly: true}, call: jira.list-audit-records}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-atlassian-jira-admin-side-observability-capability-skills
-    description: Agent Skill bundle for Schneider Atlassian Jira Admin Side Observability Capability.
+    description: Skill for Jira observability.
     skills:
     - name: schneider-atlassian-jira-admin-side-observability-capability
-      description: A capability that wraps Atlassian Jira MCP with admin-side observability — agent-attribution, hot endpoints, call-rate, sized-for-API-administrator dashboards — answering the "API administration angle" pain Manu articulated.
+      description: Jira admin observability.
       location: file:///opt/naftiko/skills/schneider-atlassian-jira-admin-side-observability-capability
-      allowed-tools: example
+      allowed-tools: list-projects,search-issues,list-audit-records
       tools:
-      - name: example
-        description: A capability that wraps Atlassian Jira MCP with admin-side observability — agent-attribution, hot endpoints, call-rate, sized-for-API-administrator dashboards — answering the "API administration angle" pain Manu articulated.
-        from:
-          sourceNamespace: schneider-atlassian-jira-admin-side-observability-capability-mcp
-          action: example
+      - {name: list-projects, from: {sourceNamespace: schneider-atlassian-jira-admin-side-observability-capability-mcp, action: list-projects}}
+      - {name: search-issues, from: {sourceNamespace: schneider-atlassian-jira-admin-side-observability-capability-mcp, action: search-issues}}
+      - {name: list-audit-records, from: {sourceNamespace: schneider-atlassian-jira-admin-side-observability-capability-mcp, action: list-audit-records}}

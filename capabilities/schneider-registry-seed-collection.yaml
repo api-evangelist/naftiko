@@ -1,67 +1,47 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Registry Seed Collection
-  description: A starter capability collection wrapping representative Schneider internal APIs as MCP tools, populating the registry-of-capabilities as a seeded fleet.
-  tags:
-  - Naftiko
+  description: Schneider Electric seed collection for the Naftiko registry — bootstraps the Schneider tenant with a curated capability set.
+  tags: [Naftiko, Schneider, Registry, Seed]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-registry
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: registry-entries, path: /v1/registry/entries, operations: [{name: list-registry-entries, method: GET}, {name: bulk-seed, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-registry-seed-collection-rest
-    description: REST API for Schneider Registry Seed Collection.
+    description: REST surface for registry seed.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: seed, path: /seed, operations: [{method: POST, name: bulk-seed, call: naftiko-registry.bulk-seed}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-registry-seed-collection-mcp
-    description: MCP server exposing Schneider Registry Seed Collection for AI agents.
+    description: MCP for registry seed.
     tools:
-    - name: example
-      description: A starter capability collection wrapping representative Schneider internal APIs as MCP tools, populating the registry-of-capabilities as a seeded fleet.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-registry-entries, hints: {readOnly: true}, call: naftiko-registry.list-registry-entries}
+    - {name: bulk-seed, call: naftiko-registry.bulk-seed}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-registry-seed-collection-skills
-    description: Agent Skill bundle for Schneider Registry Seed Collection.
+    description: Skill for registry seed.
     skills:
     - name: schneider-registry-seed-collection
-      description: A starter capability collection wrapping representative Schneider internal APIs as MCP tools, populating the registry-of-capabilities as a seeded fleet.
+      description: Schneider registry seed.
       location: file:///opt/naftiko/skills/schneider-registry-seed-collection
-      allowed-tools: example
+      allowed-tools: list-registry-entries,bulk-seed
       tools:
-      - name: example
-        description: A starter capability collection wrapping representative Schneider internal APIs as MCP tools, populating the registry-of-capabilities as a seeded fleet.
-        from:
-          sourceNamespace: schneider-registry-seed-collection-mcp
-          action: example
+      - {name: list-registry-entries, from: {sourceNamespace: schneider-registry-seed-collection-mcp, action: list-registry-entries}}
+      - {name: bulk-seed, from: {sourceNamespace: schneider-registry-seed-collection-mcp, action: bulk-seed}}

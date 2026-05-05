@@ -1,67 +1,60 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Github Copilot Mcp Extension Installer Capability
-  description: A capability that drops an approved MCP server entry into the developer's VS Code Copilot extensions window, closing the loop registry → install.
-  tags:
-  - Naftiko
+  description: Schneider Electric installer capability for GitHub Copilot MCP extensions — pulls Naftiko-managed MCPs and registers them with Copilot.
+  tags: [Naftiko, Schneider, Copilot, MCP]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
+- namespace: github-env
+  keys: {GITHUB_TOKEN: GITHUB_TOKEN}
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: github
+    type: http
+    baseUri: https://api.github.com
+    authentication: {type: bearer, token: '{{GITHUB_TOKEN}}'}
+    resources:
+    - name: copilot-config
+      path: '/repos/{{owner}}/{{repo}}/contents/.github/copilot.yml'
+      operations:
+      - {name: put-copilot-config, method: PUT, inputParameters: [{name: owner, in: path}, {name: repo, in: path}]}
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: mcp-servers, path: /v1/mcp-servers, operations: [{name: list-mcp-servers, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-github-copilot-mcp-extension-installer-capability-rest
-    description: REST API for Schneider Github Copilot Mcp Extension Installer Capability.
+    description: REST surface for Copilot MCP installer.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: install, path: '/install/{{owner}}/{{repo}}', operations: [{method: POST, name: install-copilot-mcp, inputParameters: [{name: owner, in: path, type: string}, {name: repo, in: path, type: string}], call: github.put-copilot-config}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-github-copilot-mcp-extension-installer-capability-mcp
-    description: MCP server exposing Schneider Github Copilot Mcp Extension Installer Capability for AI agents.
+    description: MCP for Copilot installer.
     tools:
-    - name: example
-      description: A capability that drops an approved MCP server entry into the developer's VS Code Copilot extensions window, closing the loop registry → install.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-mcp-servers, hints: {readOnly: true}, call: naftiko-control.list-mcp-servers}
+    - name: install-copilot-mcp
+      inputParameters: [{name: owner, type: string, required: true}, {name: repo, type: string, required: true}]
+      call: github.put-copilot-config
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-github-copilot-mcp-extension-installer-capability-skills
-    description: Agent Skill bundle for Schneider Github Copilot Mcp Extension Installer Capability.
+    description: Skill for Copilot MCP installer.
     skills:
     - name: schneider-github-copilot-mcp-extension-installer-capability
-      description: A capability that drops an approved MCP server entry into the developer's VS Code Copilot extensions window, closing the loop registry → install.
+      description: Copilot MCP extension installer.
       location: file:///opt/naftiko/skills/schneider-github-copilot-mcp-extension-installer-capability
-      allowed-tools: example
+      allowed-tools: list-mcp-servers,install-copilot-mcp
       tools:
-      - name: example
-        description: A capability that drops an approved MCP server entry into the developer's VS Code Copilot extensions window, closing the loop registry → install.
-        from:
-          sourceNamespace: schneider-github-copilot-mcp-extension-installer-capability-mcp
-          action: example
+      - {name: list-mcp-servers, from: {sourceNamespace: schneider-github-copilot-mcp-extension-installer-capability-mcp, action: list-mcp-servers}}
+      - {name: install-copilot-mcp, from: {sourceNamespace: schneider-github-copilot-mcp-extension-installer-capability-mcp, action: install-copilot-mcp}}

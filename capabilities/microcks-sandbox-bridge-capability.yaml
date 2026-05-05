@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Microcks Sandbox Bridge Capability
-  description: A capability that takes a Naftiko-published OpenAPI spec, generates Microcks sandboxes via Git, and returns runnable mock URLs as MCP-callable tools.
-  tags:
-  - Naftiko
+  description: A bridge capability between Microcks (mocks-as-a-service) and Naftiko — Microcks-defined services appear as Naftiko sandbox capabilities.
+  tags: [Naftiko, Microcks, Sandbox]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: microcks-env
+  keys: {MICROCKS_HOST: MICROCKS_HOST, MICROCKS_TOKEN: MICROCKS_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: microcks
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{MICROCKS_HOST}}
+    authentication: {type: bearer, token: '{{MICROCKS_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: services, path: /api/services, operations: [{name: list-microcks-services, method: GET}]}
+    - name: service
+      path: /api/services/{{service_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-microcks-service, method: GET, inputParameters: [{name: service_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: microcks-sandbox-bridge-capability-rest
-    description: REST API for Microcks Sandbox Bridge Capability.
+    description: REST surface for Microcks bridge.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: sandboxes, path: /sandboxes, operations: [{method: GET, name: list-sandboxes, call: microcks.list-microcks-services}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: microcks-sandbox-bridge-capability-mcp
-    description: MCP server exposing Microcks Sandbox Bridge Capability for AI agents.
+    description: MCP for Microcks bridge.
     tools:
-    - name: example
-      description: A capability that takes a Naftiko-published OpenAPI spec, generates Microcks sandboxes via Git, and returns runnable mock URLs as MCP-callable tools.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-sandboxes, hints: {readOnly: true}, call: microcks.list-microcks-services}
+    - name: get-sandbox
+      hints: {readOnly: true}
+      inputParameters: [{name: service_id, type: string, required: true}]
+      call: microcks.get-microcks-service
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: microcks-sandbox-bridge-capability-skills
-    description: Agent Skill bundle for Microcks Sandbox Bridge Capability.
+    description: Skill for Microcks bridge.
     skills:
     - name: microcks-sandbox-bridge-capability
-      description: A capability that takes a Naftiko-published OpenAPI spec, generates Microcks sandboxes via Git, and returns runnable mock URLs as MCP-callable tools.
+      description: Microcks sandbox bridge.
       location: file:///opt/naftiko/skills/microcks-sandbox-bridge-capability
-      allowed-tools: example
+      allowed-tools: list-sandboxes,get-sandbox
       tools:
-      - name: example
-        description: A capability that takes a Naftiko-published OpenAPI spec, generates Microcks sandboxes via Git, and returns runnable mock URLs as MCP-callable tools.
-        from:
-          sourceNamespace: microcks-sandbox-bridge-capability-mcp
-          action: example
+      - {name: list-sandboxes, from: {sourceNamespace: microcks-sandbox-bridge-capability-mcp, action: list-sandboxes}}
+      - {name: get-sandbox, from: {sourceNamespace: microcks-sandbox-bridge-capability-mcp, action: get-sandbox}}

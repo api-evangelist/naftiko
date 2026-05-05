@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Salesforce Service Cloud Dealer Context
-  description: A composite Compose AI Context capability that fans out to Salesforce Service Cloud + Sales Cloud + Apigee dealer APIs and returns one shaped context object.
-  tags:
-  - Naftiko
+  description: A capability over Salesforce Service Cloud composing dealer cases + accounts into a unified support context.
+  tags: [Naftiko, Salesforce, Service Cloud]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: salesforce-env
+  keys: {SF_HOST: SF_HOST, SF_TOKEN: SF_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: salesforce
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SF_HOST}}
+    authentication: {type: bearer, token: '{{SF_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: case
+      path: '/services/data/v60.0/sobjects/Case/{{id}}'
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-case, method: GET, inputParameters: [{name: id, in: path}]}
+    - {name: query, path: /services/data/v60.0/query, operations: [{name: query-soql, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: salesforce-service-cloud-dealer-context-rest
-    description: REST API for Salesforce Service Cloud Dealer Context.
+    description: REST surface for dealer service context.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: dealer-context, path: '/dealers/{{id}}/context', operations: [{method: GET, name: get-dealer-context, inputParameters: [{name: id, in: path, type: string}], call: salesforce.get-case}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: salesforce-service-cloud-dealer-context-mcp
-    description: MCP server exposing Salesforce Service Cloud Dealer Context for AI agents.
+    description: MCP for dealer service context.
     tools:
-    - name: example
-      description: A composite Compose AI Context capability that fans out to Salesforce Service Cloud + Sales Cloud + Apigee dealer APIs and returns one shaped context object.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-dealer-context
+      hints: {readOnly: true}
+      inputParameters: [{name: id, type: string, required: true}]
+      call: salesforce.get-case
+    - {name: query-soql, hints: {readOnly: true}, call: salesforce.query-soql}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: salesforce-service-cloud-dealer-context-skills
-    description: Agent Skill bundle for Salesforce Service Cloud Dealer Context.
+    description: Skill for dealer context.
     skills:
     - name: salesforce-service-cloud-dealer-context
-      description: A composite Compose AI Context capability that fans out to Salesforce Service Cloud + Sales Cloud + Apigee dealer APIs and returns one shaped context object.
+      description: Service Cloud dealer context.
       location: file:///opt/naftiko/skills/salesforce-service-cloud-dealer-context
-      allowed-tools: example
+      allowed-tools: get-dealer-context,query-soql
       tools:
-      - name: example
-        description: A composite Compose AI Context capability that fans out to Salesforce Service Cloud + Sales Cloud + Apigee dealer APIs and returns one shaped context object.
-        from:
-          sourceNamespace: salesforce-service-cloud-dealer-context-mcp
-          action: example
+      - {name: get-dealer-context, from: {sourceNamespace: salesforce-service-cloud-dealer-context-mcp, action: get-dealer-context}}
+      - {name: query-soql, from: {sourceNamespace: salesforce-service-cloud-dealer-context-mcp, action: query-soql}}

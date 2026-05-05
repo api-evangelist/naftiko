@@ -19,7 +19,7 @@ capability:
     resources:
     - {name: applications, path: /api/v1/applications, operations: [{name: list-applications, method: GET}]}
     - name: app-sync
-      path: /api/v1/applications/{{name}}/sync
+      path: '/api/v1/applications/{{name}}/sync'
       operations:
       - {name: sync-application, method: POST, inputParameters: [{name: name, in: path}]}
   - namespace: ccf
@@ -35,7 +35,7 @@ capability:
     namespace: gitops-ccf-european-banking-capability-rest
     description: REST surface for GitOps + CCF for European banking.
     resources:
-    - {name: deploy-with-compliance, path: /deploy-with-compliance/{{name}}, operations: [{method: POST, name: deploy-with-compliance, inputParameters: [{name: name, in: path, type: string}], call: ccf.run-assessment}]}
+    - {name: deploy-with-compliance, path: '/deploy-with-compliance/{{name}}', operations: [{method: POST, name: deploy-with-compliance, inputParameters: [{name: name, in: path, type: string}], call: ccf.run-assessment}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010

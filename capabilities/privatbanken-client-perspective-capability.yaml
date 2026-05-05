@@ -1,67 +1,58 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Privatbanken Client Perspective Capability
-  description: A Privatbanken / Professional Services capability that opens with the business-challenges layer, wraps a representative client-perspective workflow, exposes via MCP, and tags with governance.
-  tags:
-  - Naftiko
+  description: A capability over the Privatbanken (Nordic banking) API exposed from the client's perspective — accounts, holdings, transactions in one shape.
+  tags: [Naftiko, Privatbanken, Banking]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: privatbanken-env
+  keys: {PRIVATBANKEN_HOST: PRIVATBANKEN_HOST, PRIVATBANKEN_TOKEN: PRIVATBANKEN_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: privatbanken
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{PRIVATBANKEN_HOST}}
+    authentication: {type: bearer, token: '{{PRIVATBANKEN_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: accounts, path: /api/v1/accounts, operations: [{name: list-accounts, method: GET}]}
+    - name: account-holdings
+      path: /api/v1/accounts/{{account_id}}/holdings
       operations:
-      - name: example-op
-        method: GET
+      - {name: list-holdings, method: GET, inputParameters: [{name: account_id, in: path}]}
+    - name: account-transactions
+      path: /api/v1/accounts/{{account_id}}/transactions
+      operations:
+      - {name: list-transactions, method: GET, inputParameters: [{name: account_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: privatbanken-client-perspective-capability-rest
-    description: REST API for Privatbanken Client Perspective Capability.
+    description: REST surface for client-perspective Privatbanken.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: accounts, path: /accounts, operations: [{method: GET, name: list-accounts, call: privatbanken.list-accounts}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: privatbanken-client-perspective-capability-mcp
-    description: MCP server exposing Privatbanken Client Perspective Capability for AI agents.
+    description: MCP for Privatbanken.
     tools:
-    - name: example
-      description: A Privatbanken / Professional Services capability that opens with the business-challenges layer, wraps a representative client-perspective workflow, exposes via MCP, and tags with governance.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-accounts, hints: {readOnly: true}, call: privatbanken.list-accounts}
+    - name: list-holdings
+      hints: {readOnly: true}
+      inputParameters: [{name: account_id, type: string, required: true}]
+      call: privatbanken.list-holdings
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: privatbanken-client-perspective-capability-skills
-    description: Agent Skill bundle for Privatbanken Client Perspective Capability.
+    description: Skill for Privatbanken.
     skills:
     - name: privatbanken-client-perspective-capability
-      description: A Privatbanken / Professional Services capability that opens with the business-challenges layer, wraps a representative client-perspective workflow, exposes via MCP, and tags with governance.
+      description: Privatbanken client-perspective.
       location: file:///opt/naftiko/skills/privatbanken-client-perspective-capability
-      allowed-tools: example
+      allowed-tools: list-accounts,list-holdings
       tools:
-      - name: example
-        description: A Privatbanken / Professional Services capability that opens with the business-challenges layer, wraps a representative client-perspective workflow, exposes via MCP, and tags with governance.
-        from:
-          sourceNamespace: privatbanken-client-perspective-capability-mcp
-          action: example
+      - {name: list-accounts, from: {sourceNamespace: privatbanken-client-perspective-capability-mcp, action: list-accounts}}
+      - {name: list-holdings, from: {sourceNamespace: privatbanken-client-perspective-capability-mcp, action: list-holdings}}

@@ -15,8 +15,8 @@ capability:
     baseUri: https://api.twilio.com
     authentication: {type: basic, username: '{{TWILIO_ACCOUNT_SID}}', password: '{{TWILIO_AUTH_TOKEN}}'}
     resources:
-    - {name: messages, path: /2010-04-01/Accounts/{{TWILIO_ACCOUNT_SID}}/Messages.json, operations: [{name: send-sms, method: POST}, {name: list-messages, method: GET}]}
-    - {name: calls, path: /2010-04-01/Accounts/{{TWILIO_ACCOUNT_SID}}/Calls.json, operations: [{name: place-call, method: POST}]}
+    - {name: messages, path: '/2010-04-01/Accounts/{{TWILIO_ACCOUNT_SID}}/Messages.json', operations: [{name: send-sms, method: POST}, {name: list-messages, method: GET}]}
+    - {name: calls, path: '/2010-04-01/Accounts/{{TWILIO_ACCOUNT_SID}}/Calls.json', operations: [{name: place-call, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0

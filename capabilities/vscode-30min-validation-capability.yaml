@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Vscode 30min Validation Capability
-  description: A capability designed to be exercised in 30 minutes via the Naftiko VS Code extension + Backstage template by an architect at his desk.
-  tags:
-  - Naftiko
+  description: A VS Code-based validation capability that runs end-to-end smoke tests against a Naftiko deployment.
+  tags: [Naftiko, VS Code, Validation]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: validations, path: /v1/validations, operations: [{name: run-validation, method: POST}]}
+    - name: validation
+      path: /v1/validations/{{run_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-validation-result, method: GET, inputParameters: [{name: run_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: vscode-30min-validation-capability-rest
-    description: REST API for Vscode 30min Validation Capability.
+    description: REST surface for VS Code validation.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: run, path: /run, operations: [{method: POST, name: run-validation, call: naftiko-control.run-validation}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: vscode-30min-validation-capability-mcp
-    description: MCP server exposing Vscode 30min Validation Capability for AI agents.
+    description: MCP for VS Code validation.
     tools:
-    - name: example
-      description: A capability designed to be exercised in 30 minutes via the Naftiko VS Code extension + Backstage template by an architect at his desk.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: run-validation, call: naftiko-control.run-validation}
+    - name: get-validation-result
+      hints: {readOnly: true}
+      inputParameters: [{name: run_id, type: string, required: true}]
+      call: naftiko-control.get-validation-result
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: vscode-30min-validation-capability-skills
-    description: Agent Skill bundle for Vscode 30min Validation Capability.
+    description: Skill for VS Code validation.
     skills:
     - name: vscode-30min-validation-capability
-      description: A capability designed to be exercised in 30 minutes via the Naftiko VS Code extension + Backstage template by an architect at his desk.
+      description: VS Code validation.
       location: file:///opt/naftiko/skills/vscode-30min-validation-capability
-      allowed-tools: example
+      allowed-tools: run-validation,get-validation-result
       tools:
-      - name: example
-        description: A capability designed to be exercised in 30 minutes via the Naftiko VS Code extension + Backstage template by an architect at his desk.
-        from:
-          sourceNamespace: vscode-30min-validation-capability-mcp
-          action: example
+      - {name: run-validation, from: {sourceNamespace: vscode-30min-validation-capability-mcp, action: run-validation}}
+      - {name: get-validation-result, from: {sourceNamespace: vscode-30min-validation-capability-mcp, action: get-validation-result}}

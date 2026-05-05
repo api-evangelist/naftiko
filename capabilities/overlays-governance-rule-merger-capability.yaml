@@ -1,67 +1,48 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Overlays Governance Rule Merger Capability
-  description: A capability that consumes a base OpenAPI doc + a set of OpenAPI Overlays and exposes a merged governance-rules-applied OpenAPI to a -fronted upstream.
-  tags:
-  - Naftiko
+  description: A capability that merges OpenAPI Overlays with governance rules into a single combined ruleset for Spectral lint.
+  tags: [Naftiko, OpenAPI Overlays, Governance]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: stoplight-env
+  keys: {STOPLIGHT_TOKEN: STOPLIGHT_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: stoplight
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.stoplight.io
+    authentication: {type: bearer, token: '{{STOPLIGHT_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: rulesets, path: /v1/rulesets, operations: [{name: list-rulesets, method: GET}]}
+    - {name: lint, path: '/v1/projects/{{project_id}}/lint', operations: [{name: lint-with-merged-ruleset, method: POST, inputParameters: [{name: project_id, in: path}]}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: overlays-governance-rule-merger-capability-rest
-    description: REST API for Overlays Governance Rule Merger Capability.
+    description: REST surface for overlay+rule merger.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: lint, path: /lint, operations: [{method: POST, name: lint-with-merged-ruleset, call: stoplight.lint-with-merged-ruleset}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: overlays-governance-rule-merger-capability-mcp
-    description: MCP server exposing Overlays Governance Rule Merger Capability for AI agents.
+    description: MCP for overlay+rule merger.
     tools:
-    - name: example
-      description: A capability that consumes a base OpenAPI doc + a set of OpenAPI Overlays and exposes a merged governance-rules-applied OpenAPI to a -fronted upstream.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-rulesets, hints: {readOnly: true}, call: stoplight.list-rulesets}
+    - {name: lint-with-merged-ruleset, call: stoplight.lint-with-merged-ruleset}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: overlays-governance-rule-merger-capability-skills
-    description: Agent Skill bundle for Overlays Governance Rule Merger Capability.
+    description: Skill for rule merger.
     skills:
     - name: overlays-governance-rule-merger-capability
-      description: A capability that consumes a base OpenAPI doc + a set of OpenAPI Overlays and exposes a merged governance-rules-applied OpenAPI to a -fronted upstream.
+      description: Overlays + governance rule merger.
       location: file:///opt/naftiko/skills/overlays-governance-rule-merger-capability
-      allowed-tools: example
+      allowed-tools: list-rulesets,lint-with-merged-ruleset
       tools:
-      - name: example
-        description: A capability that consumes a base OpenAPI doc + a set of OpenAPI Overlays and exposes a merged governance-rules-applied OpenAPI to a -fronted upstream.
-        from:
-          sourceNamespace: overlays-governance-rule-merger-capability-mcp
-          action: example
+      - {name: list-rulesets, from: {sourceNamespace: overlays-governance-rule-merger-capability-mcp, action: list-rulesets}}
+      - {name: lint-with-merged-ruleset, from: {sourceNamespace: overlays-governance-rule-merger-capability-mcp, action: lint-with-merged-ruleset}}

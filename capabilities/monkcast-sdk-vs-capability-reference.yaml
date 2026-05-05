@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Monkcast Sdk Vs Capability Reference
-  description: A side-by-side reference capability that pairs a generated SDK with a Naftiko-exposed capability over the same upstream API, illustrating "Capabilities Are the New Abstraction Layer."
-  tags:
-  - Naftiko
+  description: A reference capability used in the MonkCast podcast comparing raw SDK use vs Naftiko-capability use, with the same target API exposed both ways.
+  tags: [Naftiko, MonkCast, SDK, Reference]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: stripe-env
+  keys: {STRIPE_API_KEY: STRIPE_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: stripe
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.stripe.com
+    authentication: {type: bearer, token: '{{STRIPE_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: customers, path: /v1/customers, operations: [{name: list-customers, method: GET}]}
+    - name: customer
+      path: /v1/customers/{{customer_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-customer, method: GET, inputParameters: [{name: customer_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: monkcast-sdk-vs-capability-reference-rest
-    description: REST API for Monkcast Sdk Vs Capability Reference.
+    description: REST surface for the SDK-vs-capability reference.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: customers, path: /customers, operations: [{method: GET, name: list-customers, call: stripe.list-customers}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: monkcast-sdk-vs-capability-reference-mcp
-    description: MCP server exposing Monkcast Sdk Vs Capability Reference for AI agents.
+    description: MCP for the reference.
     tools:
-    - name: example
-      description: A side-by-side reference capability that pairs a generated SDK with a Naftiko-exposed capability over the same upstream API, illustrating "Capabilities Are the New Abstraction Layer."
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-customers, hints: {readOnly: true}, call: stripe.list-customers}
+    - name: get-customer
+      hints: {readOnly: true}
+      inputParameters: [{name: customer_id, type: string, required: true}]
+      call: stripe.get-customer
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: monkcast-sdk-vs-capability-reference-skills
-    description: Agent Skill bundle for Monkcast Sdk Vs Capability Reference.
+    description: Skill for the reference.
     skills:
     - name: monkcast-sdk-vs-capability-reference
-      description: A side-by-side reference capability that pairs a generated SDK with a Naftiko-exposed capability over the same upstream API, illustrating "Capabilities Are the New Abstraction Layer."
+      description: SDK-vs-capability reference.
       location: file:///opt/naftiko/skills/monkcast-sdk-vs-capability-reference
-      allowed-tools: example
+      allowed-tools: list-customers,get-customer
       tools:
-      - name: example
-        description: A side-by-side reference capability that pairs a generated SDK with a Naftiko-exposed capability over the same upstream API, illustrating "Capabilities Are the New Abstraction Layer."
-        from:
-          sourceNamespace: monkcast-sdk-vs-capability-reference-mcp
-          action: example
+      - {name: list-customers, from: {sourceNamespace: monkcast-sdk-vs-capability-reference-mcp, action: list-customers}}
+      - {name: get-customer, from: {sourceNamespace: monkcast-sdk-vs-capability-reference-mcp, action: get-customer}}

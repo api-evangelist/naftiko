@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Public Messaging Api Prometheus Instrumented Capability
-  description: A capability over public Messaging / SMS developer API instrumented with Prometheus /metrics + /health endpoints + Resilience Metrics.
-  tags:
-  - Naftiko
+  description: A capability wrapping a public messaging API with Prometheus metrics scraping for usage observability.
+  tags: [Naftiko, Twilio, Prometheus]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: twilio-env
+  keys: {TWILIO_ACCOUNT_SID: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN: TWILIO_AUTH_TOKEN}
+- namespace: prometheus-env
+  keys: {PROMETHEUS_HOST: PROMETHEUS_HOST}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: twilio
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://api.twilio.com
+    authentication: {type: basic, username: '{{TWILIO_ACCOUNT_SID}}', password: '{{TWILIO_AUTH_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: messages, path: '/2010-04-01/Accounts/{{TWILIO_ACCOUNT_SID}}/Messages.json', operations: [{name: send-sms, method: POST}]}
+  - namespace: prometheus
+    type: http
+    baseUri: https://{{PROMETHEUS_HOST}}
+    resources:
+    - {name: query, path: /api/v1/query, operations: [{name: query-prometheus, method: GET}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: public-messaging-api-prometheus-instrumented-capability-rest
-    description: REST API for Public Messaging Api Prometheus Instrumented Capability.
+    description: REST surface for instrumented messaging.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: send, path: /send, operations: [{method: POST, name: send-sms, call: twilio.send-sms}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: public-messaging-api-prometheus-instrumented-capability-mcp
-    description: MCP server exposing Public Messaging Api Prometheus Instrumented Capability for AI agents.
+    description: MCP for instrumented messaging.
     tools:
-    - name: example
-      description: A capability over public Messaging / SMS developer API instrumented with Prometheus /metrics + /health endpoints + Resilience Metrics.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: send-sms, call: twilio.send-sms}
+    - {name: query-metrics, hints: {readOnly: true}, call: prometheus.query-prometheus}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: public-messaging-api-prometheus-instrumented-capability-skills
-    description: Agent Skill bundle for Public Messaging Api Prometheus Instrumented Capability.
+    description: Skill for instrumented messaging.
     skills:
     - name: public-messaging-api-prometheus-instrumented-capability
-      description: A capability over public Messaging / SMS developer API instrumented with Prometheus /metrics + /health endpoints + Resilience Metrics.
+      description: Instrumented messaging.
       location: file:///opt/naftiko/skills/public-messaging-api-prometheus-instrumented-capability
-      allowed-tools: example
+      allowed-tools: send-sms,query-metrics
       tools:
-      - name: example
-        description: A capability over public Messaging / SMS developer API instrumented with Prometheus /metrics + /health endpoints + Resilience Metrics.
-        from:
-          sourceNamespace: public-messaging-api-prometheus-instrumented-capability-mcp
-          action: example
+      - {name: send-sms, from: {sourceNamespace: public-messaging-api-prometheus-instrumented-capability-mcp, action: send-sms}}
+      - {name: query-metrics, from: {sourceNamespace: public-messaging-api-prometheus-instrumented-capability-mcp, action: query-metrics}}

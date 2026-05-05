@@ -1,67 +1,47 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Third Party Mcp Ide Allow List Capability
-  description: A capability that consumes the GitHub MCP, Jira MCP, and Figma MCP servers and exposes a -policy-tagged allow-list view that VS Code + Copilot can install from, with security-team-blessed risk attestations attached per server.
-  tags:
-  - Naftiko
+  description: A capability defining the IDE-side allow-list for third-party MCP servers — agents in IDEs can only call listed MCPs.
+  tags: [Naftiko, MCP, IDE, Allow-List]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: ide-allow-list, path: /v1/ide-mcp-allow-list, operations: [{name: get-ide-allow-list, method: GET}, {name: update-ide-allow-list, method: PUT}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: third-party-mcp-ide-allow-list-capability-rest
-    description: REST API for Third Party Mcp Ide Allow List Capability.
+    description: REST surface for IDE allow-list.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: allow-list, path: /allow-list, operations: [{method: GET, name: get-ide-allow-list, call: naftiko-control.get-ide-allow-list}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: third-party-mcp-ide-allow-list-capability-mcp
-    description: MCP server exposing Third Party Mcp Ide Allow List Capability for AI agents.
+    description: MCP for IDE allow-list.
     tools:
-    - name: example
-      description: A capability that consumes the GitHub MCP, Jira MCP, and Figma MCP servers and exposes a -policy-tagged allow-list view that VS Code + Copilot can install from, with security-team-blessed risk attestations attached per server.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: get-ide-allow-list, hints: {readOnly: true}, call: naftiko-control.get-ide-allow-list}
+    - {name: update-ide-allow-list, call: naftiko-control.update-ide-allow-list}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: third-party-mcp-ide-allow-list-capability-skills
-    description: Agent Skill bundle for Third Party Mcp Ide Allow List Capability.
+    description: Skill for IDE allow-list.
     skills:
     - name: third-party-mcp-ide-allow-list-capability
-      description: A capability that consumes the GitHub MCP, Jira MCP, and Figma MCP servers and exposes a -policy-tagged allow-list view that VS Code + Copilot can install from, with security-team-blessed risk attestations attached per server.
+      description: IDE MCP allow-list.
       location: file:///opt/naftiko/skills/third-party-mcp-ide-allow-list-capability
-      allowed-tools: example
+      allowed-tools: get-ide-allow-list,update-ide-allow-list
       tools:
-      - name: example
-        description: A capability that consumes the GitHub MCP, Jira MCP, and Figma MCP servers and exposes a -policy-tagged allow-list view that VS Code + Copilot can install from, with security-team-blessed risk attestations attached per server.
-        from:
-          sourceNamespace: third-party-mcp-ide-allow-list-capability-mcp
-          action: example
+      - {name: get-ide-allow-list, from: {sourceNamespace: third-party-mcp-ide-allow-list-capability-mcp, action: get-ide-allow-list}}
+      - {name: update-ide-allow-list, from: {sourceNamespace: third-party-mcp-ide-allow-list-capability-mcp, action: update-ide-allow-list}}

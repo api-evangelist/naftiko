@@ -1,67 +1,56 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Schneider Tableau Mcp Allow Listed Bi Capability
-  description: A capability that exposes Tableau-fronted BI datasets as an MCP tool, governed under the same allow-list + data-sensitivity tagging the rest of Schneider's MCP surface uses.
-  tags:
-  - Naftiko
+  description: Schneider Electric MCP capability over Tableau, restricted to an allow-listed set of dashboards/views for governed BI access.
+  tags: [Naftiko, Schneider, Tableau, BI]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: tableau-env
+  keys: {TABLEAU_HOST: TABLEAU_HOST, TABLEAU_TOKEN: TABLEAU_TOKEN, TABLEAU_SITE_ID: TABLEAU_SITE_ID}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: tableau
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{TABLEAU_HOST}}
+    authentication: {type: bearer, token: '{{TABLEAU_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
+    - name: views
+      path: /api/3.20/sites/{{TABLEAU_SITE_ID}}/views
+      operations: [{name: list-views, method: GET}]
+    - name: view-data
+      path: /api/3.20/sites/{{TABLEAU_SITE_ID}}/views/{{view_id}}/data
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-view-data, method: GET, inputParameters: [{name: view_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: schneider-tableau-mcp-allow-listed-bi-capability-rest
-    description: REST API for Schneider Tableau Mcp Allow Listed Bi Capability.
+    description: REST surface for allow-listed Tableau BI.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: views, path: /views, operations: [{method: GET, name: list-allow-listed-views, call: tableau.list-views}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: schneider-tableau-mcp-allow-listed-bi-capability-mcp
-    description: MCP server exposing Schneider Tableau Mcp Allow Listed Bi Capability for AI agents.
+    description: MCP for allow-listed Tableau BI.
     tools:
-    - name: example
-      description: A capability that exposes Tableau-fronted BI datasets as an MCP tool, governed under the same allow-list + data-sensitivity tagging the rest of Schneider's MCP surface uses.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-allow-listed-views, hints: {readOnly: true}, call: tableau.list-views}
+    - name: get-view-data
+      hints: {readOnly: true}
+      inputParameters: [{name: view_id, type: string, required: true}]
+      call: tableau.get-view-data
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: schneider-tableau-mcp-allow-listed-bi-capability-skills
-    description: Agent Skill bundle for Schneider Tableau Mcp Allow Listed Bi Capability.
+    description: Skill for allow-listed Tableau BI.
     skills:
     - name: schneider-tableau-mcp-allow-listed-bi-capability
-      description: A capability that exposes Tableau-fronted BI datasets as an MCP tool, governed under the same allow-list + data-sensitivity tagging the rest of Schneider's MCP surface uses.
+      description: Allow-listed Tableau BI access.
       location: file:///opt/naftiko/skills/schneider-tableau-mcp-allow-listed-bi-capability
-      allowed-tools: example
+      allowed-tools: list-allow-listed-views,get-view-data
       tools:
-      - name: example
-        description: A capability that exposes Tableau-fronted BI datasets as an MCP tool, governed under the same allow-list + data-sensitivity tagging the rest of Schneider's MCP surface uses.
-        from:
-          sourceNamespace: schneider-tableau-mcp-allow-listed-bi-capability-mcp
-          action: example
+      - {name: list-allow-listed-views, from: {sourceNamespace: schneider-tableau-mcp-allow-listed-bi-capability-mcp, action: list-allow-listed-views}}
+      - {name: get-view-data, from: {sourceNamespace: schneider-tableau-mcp-allow-listed-bi-capability-mcp, action: get-view-data}}

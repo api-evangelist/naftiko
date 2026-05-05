@@ -1,67 +1,55 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Servicenow Incident To Backstage Runbook
-  description: A capability that surfaces ServiceNow incident counts on the matching Backstage entity card, joining ticketing to the catalog.
-  tags:
-  - Naftiko
+  description: A capability that surfaces ServiceNow incidents as Backstage runbook entities so on-call engineers see them in the developer portal.
+  tags: [Naftiko, ServiceNow, Backstage, Runbook]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: servicenow-env
+  keys: {SN_HOST: SN_HOST, SN_USER: SN_USER, SN_PASSWORD: SN_PASSWORD}
+- namespace: backstage-env
+  keys: {BACKSTAGE_HOST: BACKSTAGE_HOST, BACKSTAGE_TOKEN: BACKSTAGE_TOKEN}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: servicenow
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://{{SN_HOST}}
+    authentication: {type: basic, username: '{{SN_USER}}', password: '{{SN_PASSWORD}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - {name: incidents, path: /api/now/table/incident, operations: [{name: list-incidents, method: GET}]}
+  - namespace: backstage
+    type: http
+    baseUri: https://{{BACKSTAGE_HOST}}
+    authentication: {type: bearer, token: '{{BACKSTAGE_TOKEN}}'}
+    resources:
+    - {name: catalog-entities, path: /api/catalog/entities, operations: [{name: upsert-entity, method: POST}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: servicenow-incident-to-backstage-runbook-rest
-    description: REST API for Servicenow Incident To Backstage Runbook.
+    description: REST surface for incident-to-runbook sync.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: sync, path: /sync, operations: [{method: POST, name: sync-incidents, call: servicenow.list-incidents}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: servicenow-incident-to-backstage-runbook-mcp
-    description: MCP server exposing Servicenow Incident To Backstage Runbook for AI agents.
+    description: MCP for incident-to-runbook sync.
     tools:
-    - name: example
-      description: A capability that surfaces ServiceNow incident counts on the matching Backstage entity card, joining ticketing to the catalog.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-incidents, hints: {readOnly: true}, call: servicenow.list-incidents}
+    - {name: sync-incidents, call: servicenow.list-incidents}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: servicenow-incident-to-backstage-runbook-skills
-    description: Agent Skill bundle for Servicenow Incident To Backstage Runbook.
+    description: Skill for incident-to-runbook.
     skills:
     - name: servicenow-incident-to-backstage-runbook
-      description: A capability that surfaces ServiceNow incident counts on the matching Backstage entity card, joining ticketing to the catalog.
+      description: ServiceNow incident → Backstage runbook.
       location: file:///opt/naftiko/skills/servicenow-incident-to-backstage-runbook
-      allowed-tools: example
+      allowed-tools: list-incidents,sync-incidents
       tools:
-      - name: example
-        description: A capability that surfaces ServiceNow incident counts on the matching Backstage entity card, joining ticketing to the catalog.
-        from:
-          sourceNamespace: servicenow-incident-to-backstage-runbook-mcp
-          action: example
+      - {name: list-incidents, from: {sourceNamespace: servicenow-incident-to-backstage-runbook-mcp, action: list-incidents}}
+      - {name: sync-incidents, from: {sourceNamespace: servicenow-incident-to-backstage-runbook-mcp, action: sync-incidents}}

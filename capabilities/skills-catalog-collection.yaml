@@ -1,67 +1,54 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Skills Catalog Collection
-  description: A multi-capability collection where each API becomes a downloadable Agent Skill, packaged as a catalog the AI-lead role can ship internally.
-  tags:
-  - Naftiko
+  description: A collection capability listing all available Agent Skills in the Naftiko skills catalog.
+  tags: [Naftiko, Skills, Catalog]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-skills
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: skills, path: /v1/skills, operations: [{name: list-skills, method: GET}]}
+    - name: skill
+      path: /v1/skills/{{skill_id}}
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-skill, method: GET, inputParameters: [{name: skill_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: skills-catalog-collection-rest
-    description: REST API for Skills Catalog Collection.
+    description: REST surface for the skills catalog.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: skills, path: /skills, operations: [{method: GET, name: list-skills, call: naftiko-skills.list-skills}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: skills-catalog-collection-mcp
-    description: MCP server exposing Skills Catalog Collection for AI agents.
+    description: MCP for the skills catalog.
     tools:
-    - name: example
-      description: A multi-capability collection where each API becomes a downloadable Agent Skill, packaged as a catalog the AI-lead role can ship internally.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-skills, hints: {readOnly: true}, call: naftiko-skills.list-skills}
+    - name: get-skill
+      hints: {readOnly: true}
+      inputParameters: [{name: skill_id, type: string, required: true}]
+      call: naftiko-skills.get-skill
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: skills-catalog-collection-skills
-    description: Agent Skill bundle for Skills Catalog Collection.
+    description: Skill for the skills catalog.
     skills:
     - name: skills-catalog-collection
-      description: A multi-capability collection where each API becomes a downloadable Agent Skill, packaged as a catalog the AI-lead role can ship internally.
+      description: Skills catalog collection.
       location: file:///opt/naftiko/skills/skills-catalog-collection
-      allowed-tools: example
+      allowed-tools: list-skills,get-skill
       tools:
-      - name: example
-        description: A multi-capability collection where each API becomes a downloadable Agent Skill, packaged as a catalog the AI-lead role can ship internally.
-        from:
-          sourceNamespace: skills-catalog-collection-mcp
-          action: example
+      - {name: list-skills, from: {sourceNamespace: skills-catalog-collection-mcp, action: list-skills}}
+      - {name: get-skill, from: {sourceNamespace: skills-catalog-collection-mcp, action: get-skill}}

@@ -17,7 +17,7 @@ capability:
     baseUri: https://api.stoplight.io
     authentication: {type: bearer, token: '{{SPECTRAL_TOKEN}}'}
     resources:
-    - {name: lint, path: /v1/projects/{{project_id}}/lint, operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
+    - {name: lint, path: '/v1/projects/{{project_id}}/lint', operations: [{name: lint-spec, method: POST, inputParameters: [{name: project_id, in: path}]}]}
   - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com

@@ -1,67 +1,59 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Public Funds Mcp
-  description: A -shaped capability wrapping a -public funds / charitable API, exposed REST + MCP, layered with event-driven adapters when alpha2 lands. The single shared prototype walked through with all four contacts.
-  tags:
-  - Naftiko
+  description: A capability over public-funds data (SEC EDGAR for fund filings) exposed as MCP for fund-research agents.
+  tags: [Naftiko, SEC, EDGAR, Funds]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: edgar-env
+  keys: {EDGAR_USER_AGENT: EDGAR_USER_AGENT}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: edgar
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://data.sec.gov
     resources:
-    - name: example
-      path: /example
+    - name: company-filings
+      path: '/submissions/CIK{{cik}}.json'
       operations:
-      - name: example-op
-        method: GET
+      - {name: get-company-filings, method: GET, inputParameters: [{name: cik, in: path}]}
+    - name: company-facts
+      path: '/api/xbrl/companyfacts/CIK{{cik}}.json'
+      operations:
+      - {name: get-company-facts, method: GET, inputParameters: [{name: cik, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: public-funds-mcp-rest
-    description: REST API for Public Funds Mcp.
+    description: REST surface for public-funds data.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: filings, path: '/filings/{{cik}}', operations: [{method: GET, name: get-company-filings, inputParameters: [{name: cik, in: path, type: string}], call: edgar.get-company-filings}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: public-funds-mcp-mcp
-    description: MCP server exposing Public Funds Mcp for AI agents.
+    description: MCP for public-funds data.
     tools:
-    - name: example
-      description: A -shaped capability wrapping a -public funds / charitable API, exposed REST + MCP, layered with event-driven adapters when alpha2 lands. The single shared prototype walked through with all four contacts.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - name: get-company-filings
+      hints: {readOnly: true}
+      inputParameters: [{name: cik, type: string, required: true}]
+      call: edgar.get-company-filings
+    - name: get-company-facts
+      hints: {readOnly: true}
+      inputParameters: [{name: cik, type: string, required: true}]
+      call: edgar.get-company-facts
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: public-funds-mcp-skills
-    description: Agent Skill bundle for Public Funds Mcp.
+    description: Skill for public-funds research.
     skills:
     - name: public-funds-mcp
-      description: A -shaped capability wrapping a -public funds / charitable API, exposed REST + MCP, layered with event-driven adapters when alpha2 lands. The single shared prototype walked through with all four contacts.
+      description: Public-funds research via EDGAR.
       location: file:///opt/naftiko/skills/public-funds-mcp
-      allowed-tools: example
+      allowed-tools: get-company-filings,get-company-facts
       tools:
-      - name: example
-        description: A -shaped capability wrapping a -public funds / charitable API, exposed REST + MCP, layered with event-driven adapters when alpha2 lands. The single shared prototype walked through with all four contacts.
-        from:
-          sourceNamespace: public-funds-mcp-mcp
-          action: example
+      - {name: get-company-filings, from: {sourceNamespace: public-funds-mcp-mcp, action: get-company-filings}}
+      - {name: get-company-facts, from: {sourceNamespace: public-funds-mcp-mcp, action: get-company-facts}}

@@ -1,67 +1,53 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Stealth Differentiator Bridge Capability
-  description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
-  tags:
-  - Naftiko
+  description: A stealth-launch capability over the Naftiko platform exposing a curated subset for the Naftiko stealth program.
+  tags: [Naftiko, Stealth]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
 - namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+  keys: {NAFTIKO_API_KEY: NAFTIKO_API_KEY}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: naftiko-control
     type: http
     baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    authentication: {type: bearer, token: '{{NAFTIKO_API_KEY}}'}
     resources:
-    - name: example
-      path: /example
+    - {name: stealth-capabilities, path: /v1/stealth/capabilities, operations: [{name: list-stealth-capabilities, method: GET}]}
+    - name: stealth-capability-invoke
+      path: /v1/stealth/capabilities/{{capability_id}}/invoke
       operations:
-      - name: example-op
-        method: GET
+      - {name: invoke-stealth-capability, method: POST, inputParameters: [{name: capability_id, in: path}]}
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: stealth-differentiator-bridge-capability-rest
-    description: REST API for Stealth Differentiator Bridge Capability.
+    description: REST surface for stealth capability.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: capabilities, path: /capabilities, operations: [{method: GET, name: list-stealth-capabilities, call: naftiko-control.list-stealth-capabilities}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: stealth-differentiator-bridge-capability-mcp
-    description: MCP server exposing Stealth Differentiator Bridge Capability for AI agents.
+    description: MCP for stealth capability.
     tools:
-    - name: example
-      description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: list-stealth-capabilities, hints: {readOnly: true}, call: naftiko-control.list-stealth-capabilities}
+    - name: invoke-stealth-capability
+      inputParameters: [{name: capability_id, type: string, required: true}]
+      call: naftiko-control.invoke-stealth-capability
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: stealth-differentiator-bridge-capability-skills
-    description: Agent Skill bundle for Stealth Differentiator Bridge Capability.
+    description: Skill for stealth capability.
     skills:
     - name: stealth-differentiator-bridge-capability
-      description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
+      description: Naftiko stealth capability.
       location: file:///opt/naftiko/skills/stealth-differentiator-bridge-capability
-      allowed-tools: example
+      allowed-tools: list-stealth-capabilities,invoke-stealth-capability
       tools:
-      - name: example
-        description: A capability that explicitly sits between the stealth product's differentiator and one upstream API, demonstrating Naftiko-handles-integration-while-they-focus-on-IP.
-        from:
-          sourceNamespace: stealth-differentiator-bridge-capability-mcp
-          action: example
+      - {name: list-stealth-capabilities, from: {sourceNamespace: stealth-differentiator-bridge-capability-mcp, action: list-stealth-capabilities}}
+      - {name: invoke-stealth-capability, from: {sourceNamespace: stealth-differentiator-bridge-capability-mcp, action: invoke-stealth-capability}}

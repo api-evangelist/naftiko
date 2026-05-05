@@ -1,67 +1,53 @@
 naftiko: 1.0.0-alpha2
 info:
   title: Sms Verify Mcp Collection
-  description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
-  tags:
-  - Naftiko
+  description: A collection capability over Twilio Verify (SMS OTP) for agent-driven user verification flows.
+  tags: [Naftiko, Twilio Verify, SMS]
   created: '2026-05-01'
-  modified: '2026-05-01'
+  modified: '2026-05-04'
 binds:
-- namespace: naftiko-env
-  description: Naftiko credentials.
-  keys:
-    NAFTIKO_API_KEY: NAFTIKO_API_KEY
+- namespace: twilio-env
+  keys: {TWILIO_ACCOUNT_SID: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN: TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID: TWILIO_VERIFY_SID}
 capability:
   consumes:
-  - namespace: naftiko
+  - namespace: twilio-verify
     type: http
-    baseUri: https://api.naftiko.com
-    authentication:
-      type: bearer
-      token: '{{NAFTIKO_API_KEY}}'
+    baseUri: https://verify.twilio.com
+    authentication: {type: basic, username: '{{TWILIO_ACCOUNT_SID}}', password: '{{TWILIO_AUTH_TOKEN}}'}
     resources:
-    - name: example
-      path: /example
-      operations:
-      - name: example-op
-        method: GET
+    - name: verifications
+      path: /v2/Services/{{TWILIO_VERIFY_SID}}/Verifications
+      operations: [{name: start-verification, method: POST}]
+    - name: verification-checks
+      path: /v2/Services/{{TWILIO_VERIFY_SID}}/VerificationCheck
+      operations: [{name: check-verification, method: POST}]
   exposes:
   - type: rest
     address: 0.0.0.0
     port: 8080
     namespace: sms-verify-mcp-collection-rest
-    description: REST API for Sms Verify Mcp Collection.
+    description: REST surface for SMS verify.
     resources:
-    - name: example
-      path: /example
-      operations:
-      - method: GET
-        name: example-op
-        call: naftiko.example-op
+    - {name: start, path: /start, operations: [{method: POST, name: start-verification, call: twilio-verify.start-verification}]}
+    - {name: check, path: /check, operations: [{method: POST, name: check-verification, call: twilio-verify.check-verification}]}
   - type: mcp
     address: 0.0.0.0
     port: 3010
     namespace: sms-verify-mcp-collection-mcp
-    description: MCP server exposing Sms Verify Mcp Collection for AI agents.
+    description: MCP for SMS verify.
     tools:
-    - name: example
-      description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
-      hints:
-        readOnly: true
-      call: naftiko.example-op
+    - {name: start-verification, call: twilio-verify.start-verification}
+    - {name: check-verification, call: twilio-verify.check-verification}
   - type: skill
     address: 0.0.0.0
     port: 3011
     namespace: sms-verify-mcp-collection-skills
-    description: Agent Skill bundle for Sms Verify Mcp Collection.
+    description: Skill for SMS verify.
     skills:
     - name: sms-verify-mcp-collection
-      description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
+      description: Twilio Verify SMS OTP.
       location: file:///opt/naftiko/skills/sms-verify-mcp-collection
-      allowed-tools: example
+      allowed-tools: start-verification,check-verification
       tools:
-      - name: example
-        description: A capability collection wrapping SMS + Verify APIs as MCP tools with PII detection + HTTPS gates, packaged as an Agent-callable communications surface.
-        from:
-          sourceNamespace: sms-verify-mcp-collection-mcp
-          action: example
+      - {name: start-verification, from: {sourceNamespace: sms-verify-mcp-collection-mcp, action: start-verification}}
+      - {name: check-verification, from: {sourceNamespace: sms-verify-mcp-collection-mcp, action: check-verification}}
