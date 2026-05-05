@@ -1,0 +1,13 @@
+{
+  "repo": "naftiko",
+  "feeds": [
+    {
+      "source": "https://naftiko.io",
+      "feed_url": "https://naftiko.io/feed",
+      "saved": 10,
+      "title": "Naftiko"
+    }
+  ],
+  "post_count": 10,
+  "fetched": "2026-05-03T23:32:26Z"
+}
