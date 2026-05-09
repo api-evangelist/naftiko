@@ -4,10 +4,10 @@
     {
       "source": "https://naftiko.io",
       "feed_url": "https://naftiko.io/feed",
-      "saved": 10,
-      "title": "Naftiko"
+      "title": "Naftiko",
+      "saved": 10
     }
   ],
-  "post_count": 10,
-  "fetched": "2026-05-03T23:32:26Z"
+  "post_count": 20,
+  "fetched": "2026-05-09T20:17:51Z"
 }
