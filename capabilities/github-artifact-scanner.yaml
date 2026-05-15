@@ -1,0 +1,504 @@
+naftiko: "1.0.0-alpha2"
+
+info:
+  title: GitHub Artifact Scanner
+  description: >-
+    Scans a GitHub repository for the API + AI artifacts that matter to a
+    Naftiko Capability Fleet — Swagger, OpenAPI, AsyncAPI, MCP descriptors,
+    Agent Skills, JSON Schema, Postman Collections, and Bruno Collections —
+    using GitHub's /search/code endpoint. Each artifact type has its own
+    scan operation, and the capability is exposed simultaneously over REST,
+    MCP, and Agent Skills so it can be reached from agents, copilots, IDEs,
+    and humans alike.
+  tags:
+    - Naftiko
+    - GitHub
+    - Discovery
+    - Auto-Discovery
+    - Swagger
+    - OpenAPI
+    - AsyncAPI
+    - MCP
+    - Agent-Skills
+    - JSON-Schema
+    - Postman
+    - Bruno
+  created: '2026-05-15'
+  modified: '2026-05-15'
+
+binds:
+  - namespace: github-env
+    description: >-
+      GitHub Personal Access Token (classic or fine-grained) with at least
+      `public_repo` (or `repo` for private scans). Required because GitHub's
+      /search/code endpoint refuses unauthenticated requests.
+    keys:
+      GITHUB_TOKEN: GITHUB_TOKEN
+
+capability:
+  consumes:
+    - namespace: github
+      type: http
+      baseUri: https://api.github.com
+      authentication:
+        type: bearer
+        token: '{{GITHUB_TOKEN}}'
+
+      resources:
+        # ---- Swagger (legacy 2.x) ----
+        - name: search-swagger
+          path: '/search/code?q=filename:swagger.json+OR+filename:swagger.yaml+OR+filename:swagger.yml+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- OpenAPI 3.x ----
+        - name: search-openapi
+          path: '/search/code?q=filename:openapi.json+OR+filename:openapi.yaml+OR+filename:openapi.yml+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- AsyncAPI ----
+        - name: search-asyncapi
+          path: '/search/code?q=filename:asyncapi.json+OR+filename:asyncapi.yaml+OR+filename:asyncapi.yml+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- MCP server descriptors ----
+        - name: search-mcp
+          path: '/search/code?q=filename:mcp.json+OR+filename:.mcp.json+OR+filename:mcp-config.json+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- Agent Skills (Anthropic / agentskills.io convention) ----
+        - name: search-agent-skills
+          path: '/search/code?q=filename:SKILL.md+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- JSON Schema (.schema.json files) ----
+        - name: search-json-schema
+          path: '/search/code?q=path:.schema.json+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- Postman Collections (*.postman_collection.json) ----
+        - name: search-postman
+          path: '/search/code?q=path:.postman_collection.json+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+        # ---- Bruno Collections (*.bru files) ----
+        - name: search-bruno
+          path: '/search/code?q=extension:bru+repo:{{owner}}/{{name}}'
+          operations:
+            - name: search
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: path
+                  required: true
+                - name: name
+                  in: path
+                  required: true
+
+  exposes:
+    # =============== REST ===============
+    - type: rest
+      address: 0.0.0.0
+      port: 8080
+      namespace: github-artifact-scanner-rest
+      description: >-
+        REST API for scanning a GitHub repository for API + AI artifacts.
+        Each endpoint accepts owner + name as query parameters and returns
+        the raw GitHub /search/code response.
+      resources:
+        - name: scan-swagger
+          path: '/scan/swagger'
+          operations:
+            - name: scan-swagger
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-swagger
+
+        - name: scan-openapi
+          path: '/scan/openapi'
+          operations:
+            - name: scan-openapi
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-openapi
+
+        - name: scan-asyncapi
+          path: '/scan/asyncapi'
+          operations:
+            - name: scan-asyncapi
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-asyncapi
+
+        - name: scan-mcp
+          path: '/scan/mcp'
+          operations:
+            - name: scan-mcp
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-mcp
+
+        - name: scan-agent-skills
+          path: '/scan/agent-skills'
+          operations:
+            - name: scan-agent-skills
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-agent-skills
+
+        - name: scan-json-schema
+          path: '/scan/json-schema'
+          operations:
+            - name: scan-json-schema
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-json-schema
+
+        - name: scan-postman
+          path: '/scan/postman'
+          operations:
+            - name: scan-postman
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-postman
+
+        - name: scan-bruno
+          path: '/scan/bruno'
+          operations:
+            - name: scan-bruno
+              method: GET
+              inputParameters:
+                - name: owner
+                  in: query
+                  type: string
+                  required: true
+                - name: name
+                  in: query
+                  type: string
+                  required: true
+              call: github.search-bruno
+
+    # =============== MCP ===============
+    - type: mcp
+      address: 0.0.0.0
+      port: 3010
+      namespace: github-artifact-scanner-mcp
+      description: >-
+        MCP server exposing per-artifact scanners as tools so agents and
+        copilots can ask "does this repo have an OpenAPI?" or "does this
+        repo have any agent skills?" and get a precise answer.
+      tools:
+        - name: scan-swagger
+          description: >-
+            Scan a GitHub repository for Swagger 2.x descriptors
+            (swagger.json, swagger.yaml, swagger.yml).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-swagger
+
+        - name: scan-openapi
+          description: >-
+            Scan a GitHub repository for OpenAPI 3.x descriptors
+            (openapi.json, openapi.yaml, openapi.yml).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-openapi
+
+        - name: scan-asyncapi
+          description: >-
+            Scan a GitHub repository for AsyncAPI descriptors
+            (asyncapi.json, asyncapi.yaml, asyncapi.yml).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-asyncapi
+
+        - name: scan-mcp
+          description: >-
+            Scan a GitHub repository for MCP server descriptors
+            (mcp.json, .mcp.json, mcp-config.json).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-mcp
+
+        - name: scan-agent-skills
+          description: >-
+            Scan a GitHub repository for Agent Skills (any SKILL.md file
+            following the agentskills.io / Anthropic Skills convention).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-agent-skills
+
+        - name: scan-json-schema
+          description: >-
+            Scan a GitHub repository for JSON Schema files
+            (any *.schema.json under any path).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-json-schema
+
+        - name: scan-postman
+          description: >-
+            Scan a GitHub repository for Postman Collections
+            (any *.postman_collection.json under any path).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-postman
+
+        - name: scan-bruno
+          description: >-
+            Scan a GitHub repository for Bruno collection files
+            (any *.bru file).
+          hints:
+            readOnly: true
+          inputParameters:
+            - name: owner
+              type: string
+              required: true
+              description: GitHub owner / org / user, e.g. "naftiko".
+            - name: name
+              type: string
+              required: true
+              description: GitHub repository name, e.g. "framework".
+          call: github.search-bruno
+
+    # =============== Agent Skills ===============
+    - type: skill
+      address: 0.0.0.0
+      port: 3011
+      namespace: github-artifact-scanner-skills
+      description: >-
+        Agent Skill bundle for GitHub artifact discovery — gives any
+        agent the eight scan tools as a single curated skill so they
+        can do a complete artifact inventory of a repository.
+      skills:
+        - name: scan-github-for-api-and-ai-artifacts
+          description: >-
+            Scan any GitHub repository for the API + AI artifacts that
+            matter to a Naftiko Capability Fleet — Swagger, OpenAPI,
+            AsyncAPI, MCP, Agent Skills, JSON Schema, Postman, Bruno.
+            Returns the raw GitHub /search/code results so the agent
+            can decide what to do with them.
+          location: file:///opt/naftiko/skills/github-artifact-scanner
+          allowed-tools: scan-swagger,scan-openapi,scan-asyncapi,scan-mcp,scan-agent-skills,scan-json-schema,scan-postman,scan-bruno
+          tools:
+            - name: scan-swagger
+              description: Find Swagger 2.x descriptors (swagger.json/.yaml/.yml).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-swagger
+            - name: scan-openapi
+              description: Find OpenAPI 3.x descriptors (openapi.json/.yaml/.yml).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-openapi
+            - name: scan-asyncapi
+              description: Find AsyncAPI descriptors (asyncapi.json/.yaml/.yml).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-asyncapi
+            - name: scan-mcp
+              description: Find MCP server descriptors (mcp.json variants).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-mcp
+            - name: scan-agent-skills
+              description: Find Agent Skills (any SKILL.md file).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-agent-skills
+            - name: scan-json-schema
+              description: Find JSON Schema files (any *.schema.json).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-json-schema
+            - name: scan-postman
+              description: Find Postman Collections (*.postman_collection.json).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-postman
+            - name: scan-bruno
+              description: Find Bruno collection files (*.bru).
+              from:
+                sourceNamespace: github-artifact-scanner-mcp
+                action: scan-bruno
