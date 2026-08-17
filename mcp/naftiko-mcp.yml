@@ -1,0 +1,79 @@
+generated: '2026-08-17'
+method: searched
+source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/spec/
+provider: Naftiko
+providerId: naftiko
+status: published
+description: >-
+  Naftiko is an MCP server GENERATOR, not an MCP server operator, and this file exists to
+  hold that distinction rather than blur it. The Ikanos engine reads one capability YAML
+  and serves it simultaneously over MCP, Agent Skill, REST and a Control port — MCP is a
+  first-class exposure adapter in the published capability schema, with full tool, resource
+  and prompt coverage. But the server that results is YOUR server: it runs on your
+  infrastructure, and its tool list is whatever your capability YAML declares. Naftiko
+  operates no hosted MCP endpoint of its own, so there is no URL an agent can POST
+  tools/list to today. The one Naftiko-operated HTTP host found anywhere in this pass,
+  mocks.naftiko.net, is a Microcks REST mock service and answers 401 on every path.
+deployment:
+  mode: local-stdio
+  endpoint: null
+  install: 'docker run -v "$PWD/capability.yaml:/app/ikanos.yaml" ghcr.io/naftiko/ikanos'
+  package: https://github.com/naftiko/ikanos/pkgs/container/ikanos
+  auth: none
+  verified: searched
+  transport_note: >-
+    `mode` is recorded as local-stdio because that is the field's real question — can an
+    agent reach this provider now, or must a human install and run something first? Here a
+    human must. The transport itself is NOT stdio: the Ikanos engine serves MCP over
+    streamable HTTP from the container, on a port the operator chooses. There is no npx
+    package and no stdio binary; the distribution unit is a container image (or a native
+    CLI binary running `ikanos serve`). Recorded this way deliberately so this provider is
+    not counted alongside the 1,076 catalog entries that publish a callable https endpoint.
+  probe_evidence:
+    - {url: 'https://mocks.naftiko.net/', status: 401, note: 'only Naftiko-operated HTTP host found; gated, and a REST mock service rather than MCP'}
+    - {url: 'https://shipyard.naftiko.io/.well-known/agent-card.json', status: 200, note: 'SPA shell, not a document — no card pointing at an MCP endpoint'}
+    - {url: 'https://naftiko.io/.well-known/ai-plugin.json', status: 404}
+tools:
+  enumerable: false
+  count: null
+  note: >-
+    Deliberately empty, and this is the finding rather than a gap. An Ikanos MCP server's
+    tools are declared by the capability author in the `exposes` block of their own YAML,
+    so there is no fixed Naftiko tool list to harvest and none was invented. What Naftiko
+    publishes instead is the SCHEMA those tools must satisfy — captured verbatim at
+    json-schema/naftiko-ikanos-capability-schema.json. No tool crosswalk was written
+    (mcp/naftiko-tool-crosswalk.yml is absent by design): a crosswalk binds MCP tools to
+    backing OpenAPI operationIds, and here there is neither a fixed tool set nor a Naftiko
+    OpenAPI to bind them to.
+mcp_surface_in_schema:
+  source: json-schema/naftiko-ikanos-capability-schema.json
+  description: >-
+    The capability schema defines the complete MCP surface an author can declare. These are
+    schema definitions Naftiko ships, not tools Naftiko serves.
+  definitions:
+    - {name: ExposesMcp, role: 'the MCP exposure adapter itself'}
+    - {name: McpTool, role: 'a tool definition'}
+    - {name: McpToolHints, role: 'MCP tool annotations — readOnly, destructive, idempotent, openWorld'}
+    - {name: McpToolInputParameter, role: 'typed input parameter for a tool'}
+    - {name: McpResource, role: 'an MCP resource'}
+    - {name: McpPrompt, role: 'an MCP prompt'}
+    - {name: McpPromptArgument, role: 'a prompt argument'}
+    - {name: McpPromptMessage, role: 'a prompt message'}
+  coverage: 'tools, resources and prompts — the full MCP server surface, not tools alone'
+related_tooling:
+  - name: 'polychro-capability'
+    description: 'A Polychro module described in the Polychro AGENTS.md as the "Naftiko/Ikanos MCP adapter exposing Polychro as an MCP server" — i.e. Naftiko lints specs through its own MCP surface. Still customer-run, not hosted.'
+    source: https://github.com/naftiko/polychro
+  - name: 'ikanos import mcp'
+    description: 'Roadmap item — inspect an existing MCP server and generate an `exposes: type: mcp` capability from it. Not shipped as of v1.0.0-beta4.'
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  - name: 'MCP transport upgrade'
+    description: 'Roadmap item — upgrade the engine transport to the July 2026 revision of the MCP protocol. Naftiko states this is an engine bump with no capability-spec impact.'
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  - name: 'Naftiko Sandboxes'
+    description: >-
+      Twenty-plus one-click-deployable capabilities (Slack, GitHub, Google, Anthropic,
+      OpenAI, Bluesky, Microsoft 365, Figma, Notion…) that each expose MCP + REST + Skill
+      when deployed. These are the closest thing to a runnable Naftiko MCP server, and they
+      still run on the deployer's own Cloudflare/Render/Cloud Run account.
+    source: https://github.com/naftiko/sandboxes

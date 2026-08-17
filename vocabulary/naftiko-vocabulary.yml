@@ -1,0 +1,175 @@
+generated: '2026-08-17'
+method: searched
+source: https://naftiko.io/resources/glossary
+name: Naftiko Glossary
+provider: Naftiko
+providerId: naftiko
+description: The vocabulary Naftiko publishes for capability-driven integration, context engineering and
+  its own product surface. Harvested verbatim from the public glossary at naftiko.io/resources/glossary
+  — term, definition and the category Naftiko assigns it. Each term also has its own permalink under naftiko.io/glossary/<slug>/.
+term_count: 32
+categories:
+- Core Concepts
+- Governance
+- Protocols & Standards
+terms:
+- term: A2A (Agent-to-Agent)
+  description: Google's Agent-to-Agent protocol for tool discovery and execution across distributed agent
+    systems.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/a2a/
+- term: API Governance
+  description: Policies and rules that ensure APIs are consistent, secure, discoverable, and compliant
+    across teams and environments.
+  category: Governance
+  url: https://naftiko.io/glossary/api-governance/
+- term: API Reusability
+  description: The practice of making existing APIs discoverable and measurable so teams reuse what exists
+    rather than rebuilding.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/api-reusability/
+- term: API-First Design
+  description: An approach that starts from existing APIs and defines reusable capabilities on top, so
+    API investments power new AI and app experiences.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/api-first-design/
+- term: Agent Orchestration
+  description: The practice of coordinating how autonomous agents discover skills, negotiate actions,
+    and execute workflows under governance controls.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/agent-orchestration/
+- term: Agent Skills
+  description: Downloadable skill folders with SKILL.md prompt integration that developer agents can consume
+    as packaged capabilities.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/agent-skills/
+- term: AsyncAPI
+  description: A specification for describing event-driven and message-driven APIs, supported by Naftiko
+    for consuming asynchronous integrations.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/asyncapi/
+- term: Backstage
+  description: An open-source developer portal by Spotify that Naftiko integrates with for capability
+    scaffolding, catalog registration, and governance scorecards.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/backstage/
+- term: Capability
+  description: A governed, reusable integration unit that wraps one or more APIs into a domain-driven
+    contract consumable by developers, copilots, and agents.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/capability/
+- term: Capability Fabric
+  description: A unified architectural layer that brings together APIs, integrations, governance, observability,
+    and automation into a cohesive system.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/capability-fabric/
+- term: Capability Fleet
+  description: A governed layer that turns existing APIs and integrations into reusable capabilities that
+    are discoverable, policy-driven, composable, and observable.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/capability-fleet/
+- term: Capability Spec
+  description: A declarative YAML specification validated by JSON Schema that defines consumption, orchestration,
+    exposure, governance, and deployment for each capability.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/capability-spec/
+- term: Context Engineering
+  description: The practice of curating fields, schemas, and descriptions so AI tool discovery is semantic
+    and response payloads are right-sized for tasks.
+  category: Governance
+  url: https://naftiko.io/glossary/context-engineering/
+- term: Exposure Adapter
+  description: The protocol-specific interface a capability exposes to downstream consumers -- REST, MCP,
+    Agent Skills, or A2A.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/exposure-adapter/
+- term: Golden Path
+  description: A pre-approved, compliant-by-default pattern that teams follow to deliver capabilities
+    without waiting for manual review.
+  category: Governance
+  url: https://naftiko.io/glossary/golden-path/
+- term: Governance Rules
+  description: Blocking and advisory policies enforced at spec validation, CI merge gates, and Kubernetes
+    admission to ensure compliance and security.
+  category: Governance
+  url: https://naftiko.io/glossary/governance-rules/
+- term: Identity Propagation
+  description: The practice of flowing caller identity through multi-hop agent and API chains so every
+    action is attributable to its originator.
+  category: Governance
+  url: https://naftiko.io/glossary/identity-propagation/
+- term: JSON Schema
+  description: A vocabulary for annotating and validating JSON documents, used by Naftiko to validate
+    capability specs and enforce contract correctness.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/json-schema/
+- term: JSONPath Mapping
+  description: Expression-based data extraction that maps fields from upstream API responses to capability
+    output parameters.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/jsonpath-mapping/
+- term: MCP (Model Context Protocol)
+  description: A standard for AI copilots and agents to discover and invoke tools, resources, and prompts
+    from external systems.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/mcp/
+- term: MCP Server
+  description: A service that exposes tools, resources, and prompts to AI clients via the Model Context
+    Protocol, generated automatically from a Naftiko capability spec.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/mcp-server/
+- term: MCP-First Design
+  description: An approach that designs capabilities first for MCP clients, then maps them to underlying
+    APIs for a clean AI-native integration model.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/mcp-first-design/
+- term: Naftiko Framework
+  description: An open-source, Java-based Docker runtime that interprets capability specs and runs them
+    as live services with CLI, VS Code, Backstage, and Docker Desktop extensions.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/naftiko-framework/
+- term: OpenAPI
+  description: An industry-standard specification for describing HTTP APIs, used by Naftiko as a source
+    format for consuming and elevating existing APIs into capabilities.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/openapi/
+- term: Orchestration Steps
+  description: Ordered sequences of API calls within a capability that support conditional logic, loops,
+    parallel execution, and cross-source mapping.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/orchestration-steps/
+- term: Output Parameters
+  description: Typed response fields with JSONPath mapping that shape what data a capability returns to
+    its consumers.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/output-parameters/
+- term: Progressive Abstraction
+  description: A four-level architecture for consuming APIs -- from forwarding HTTP client (L1) through
+    templatized (L2) and structured (L3) to functional MCP (L4).
+  category: Core Concepts
+  url: https://naftiko.io/glossary/progressive-abstraction/
+- term: REST API
+  description: An architectural style for networked applications using HTTP methods and resource-based
+    URLs, one of the primary exposure adapters in Naftiko.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/rest-api/
+- term: Right-Sizing
+  description: The practice of exposing only what consumers need -- shaping API responses, context windows,
+    and service boundaries to match specific use cases.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/right-sizing/
+- term: Shadow MCP
+  description: Ungoverned MCP servers deployed outside official channels, creating security and compliance
+    risks similar to shadow IT.
+  category: Governance
+  url: https://naftiko.io/glossary/shadow-mcp/
+- term: Source Adapter
+  description: The consumed API declaration in a capability spec that defines how the capability connects
+    to upstream systems.
+  category: Core Concepts
+  url: https://naftiko.io/glossary/source-adapter/
+- term: Streamable HTTP
+  description: An MCP transport mode for remote server deployments where AI clients connect to MCP servers
+    over HTTP with streaming support.
+  category: Protocols & Standards
+  url: https://naftiko.io/glossary/streamable-http/

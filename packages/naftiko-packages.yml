@@ -1,0 +1,143 @@
+generated: '2026-08-17'
+method: searched
+source: https://repo1.maven.org/maven2/io/ikanos/
+description: >-
+  Naftiko's first-party distribution surface. Naftiko does not ship client SDKs for a
+  hosted API — it ships the software itself: two Apache 2.0 Java engines published to
+  Maven Central (Ikanos, the capability engine; Polychro, the spec linter), a container
+  image on GHCR and Docker Hub, pre-built native CLI binaries attached to GitHub
+  Releases, and a VS Code extension on the Visual Studio Marketplace. Every version and
+  date below was read from the registry metadata endpoint on 2026-08-17.
+registries_checked:
+  - {registry: maven-central, url: 'https://repo1.maven.org/maven2/io/ikanos/', result: 'hit — 7 artifacts under groupId io.ikanos'}
+  - {registry: maven-central, url: 'https://repo1.maven.org/maven2/io/polychro/', result: 'hit — 17 artifacts under groupId io.polychro'}
+  - {registry: maven-central, url: 'https://repo1.maven.org/maven2/io/naftiko/', result: 'hit — legacy groupId io.naftiko:framework, superseded by io.ikanos at 1.0.0-beta1'}
+  - {registry: npm, url: 'https://registry.npmjs.org/-/v1/search?text=naftiko', result: 'miss — 0 results; also 404 on ikanos, polychro, @naftiko/crafter'}
+  - {registry: pypi, url: 'https://pypi.org/pypi/ikanos/json', result: 'miss — 404; also 404 on polychro, naftiko'}
+  - {registry: ghcr, url: 'https://ghcr.io/v2/naftiko/ikanos/tags/list', result: 'hit — 24 tags, latest v1.0.0-beta4'}
+  - {registry: docker-hub, url: 'https://hub.docker.com/v2/repositories/naftiko/', result: 'hit — 1 repository (naftiko/ikanos), 736 pulls'}
+  - {registry: vscode-marketplace, url: 'https://marketplace.visualstudio.com/items?itemName=Naftiko-Inc.crafter', result: 'hit — Naftiko Crafter 0.4.0'}
+package_count: 8
+official_count: 8
+packages:
+  - name: io.ikanos:ikanos-engine
+    language: java
+    registry: maven-central
+    official: true
+    version: 1.0.0-beta4
+    published: '2026-08-17'
+    url: https://repo1.maven.org/maven2/io/ikanos/ikanos-engine/
+    repo: https://github.com/naftiko/ikanos
+    license: Apache-2.0
+    note: >-
+      The capability engine. Reads one capability YAML and serves it simultaneously as
+      REST, MCP, Agent Skill and a Control port. 6 published versions (1.0.0-alpha3 →
+      1.0.0-beta4). Requires Java 21 LTS.
+
+  - name: io.ikanos:ikanos-cli
+    language: java
+    registry: maven-central
+    official: true
+    version: 1.0.0-beta4
+    published: '2026-08-17'
+    url: https://repo1.maven.org/maven2/io/ikanos/ikanos-cli/
+    repo: https://github.com/naftiko/ikanos
+    license: Apache-2.0
+    note: 'Command surface catalogued in cli/naftiko-cli.yml. Also distributed as native binaries — see the github-releases entry below.'
+
+  - name: io.ikanos:ikanos-spec
+    language: java
+    registry: maven-central
+    official: true
+    version: 1.0.0-beta4
+    published: '2026-08-17'
+    url: https://repo1.maven.org/maven2/io/ikanos/ikanos-spec/
+    repo: https://github.com/naftiko/ikanos
+    license: Apache-2.0
+    note: >-
+      The specification module. Carries the capability JSON Schema
+      (json-schema/naftiko-ikanos-capability-schema.json), the governance rule pack
+      (rules/naftiko-ikanos-ruleset.yml), and the OpenAPI import/export converters.
+      Sibling artifacts io.ikanos:ikanos-parent and io.ikanos:ikanos-tunnel-ziti publish
+      on the same cadence and version.
+
+  - name: io.polychro:polychro-cli
+    language: java
+    registry: maven-central
+    official: true
+    version: 1.0.0-beta4
+    published: '2026-08-17'
+    url: https://repo1.maven.org/maven2/io/polychro/polychro-cli/
+    repo: https://github.com/naftiko/polychro
+    license: Apache-2.0
+    note: >-
+      Polychro, the deterministic spec linter. 17 artifacts publish under groupId
+      io.polychro on the same release train — polychro-core, polychro-api,
+      polychro-capability, polychro-ruleset, polychro-rulesets, polychro-json-schema,
+      polychro-json-structure, polychro-markdown, polychro-html, polychro-checkov,
+      polychro-wellformedness, polychro-format-common, polychro-ruleset-polyglot,
+      polychro-github-action, polychro-parent.
+
+  - name: io.polychro:polychro-github-action
+    language: java
+    registry: maven-central
+    official: true
+    version: 1.0.0-beta4
+    published: '2026-08-17'
+    url: https://repo1.maven.org/maven2/io/polychro/polychro-github-action/
+    repo: https://github.com/naftiko/polychro
+    license: Apache-2.0
+    note: 'Backs the "Fix It" GitHub Action declared by action.yml at the root of naftiko/polychro.'
+
+  - name: ghcr.io/naftiko/ikanos
+    language: container
+    registry: ghcr
+    official: true
+    version: v1.0.0-beta4
+    published: '2026-08-17'
+    url: https://ghcr.io/naftiko/ikanos
+    repo: https://github.com/naftiko/ikanos
+    license: Apache-2.0
+    note: >-
+      Public, anonymously pullable. 24 tags including `latest`, every release tag from
+      v1.0.0-alpha3 forward, and per-commit sha- tags. Mirrored to docker.io/naftiko/ikanos
+      (same tag set, 736 pulls as of 2026-08-17). Documented pull command:
+      `docker pull ghcr.io/naftiko/ikanos:v1.0.0-beta3`. Image entrypoint defaults to
+      `ikanos serve` reading /app/ikanos.yaml.
+
+  - name: ikanos-cli (native binaries)
+    language: binary
+    registry: github-releases
+    official: true
+    version: v1.0.0-beta4
+    published: '2026-08-17'
+    url: https://github.com/naftiko/ikanos/releases
+    repo: https://github.com/naftiko/ikanos
+    license: Apache-2.0
+    assets:
+      - ikanos-cli-linux-amd64
+      - ikanos-cli-linux-arm64
+      - ikanos-cli-macos-arm64
+      - ikanos-cli-windows-amd64.exe
+    note: >-
+      GitHub Releases has no package-metadata endpoint in the registry sense; version and
+      date are read from the release itself. Asset names were renamed from naftiko-cli-*
+      to ikanos-cli-* at v1.0.0-alpha3, alongside the io.naftiko → io.ikanos groupId move.
+
+  - name: Naftiko-Inc.crafter
+    language: typescript
+    registry: vscode-marketplace
+    official: true
+    version: 0.4.0
+    published: '2026-08-17'
+    url: https://marketplace.visualstudio.com/items?itemName=Naftiko-Inc.crafter
+    license: unstated-on-listing
+    note: >-
+      "Naftiko Crafter" — lints and validates Ikanos capability configuration files inside
+      VS Code and AI IDEs. Free in every edition per the editions page. Publisher
+      "Naftiko-Inc" confirms first-party.
+
+not_published:
+  - {registry: npm, note: 'No npm package. The Crafter extension is distributed through the VS Code Marketplace only.'}
+  - {registry: pypi, note: 'No Python distribution. The engines are Java; the CLI ships as a native image.'}
+  - {registry: homebrew, note: 'Installation docs give a curl-and-chmod flow for the native binary, not a brew formula.'}

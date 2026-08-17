@@ -1,0 +1,98 @@
+generated: '2026-08-17'
+method: searched
+source: https://github.com/naftiko/ikanos
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Provider-published agent operating instructions, saved verbatim. Nothing in this
+  directory was generated or derived by API Evangelist — the pipeline's normal fallback,
+  authoring skills grounded in a provider's OpenAPI operationIds, was unavailable because
+  Naftiko publishes no OpenAPI. What Naftiko does publish, at canonical paths in its two
+  flagship open-source repositories, is a maintained AGENTS.md per repository plus a
+  GitHub Copilot instructions file that documents a real Skill Server discovery protocol.
+  Those were harvested as-is.
+scope_note: >-
+  Read the scope honestly. These are CONTRIBUTOR-facing instructions — how an agent should
+  build, test, review and open PRs against the Ikanos and Polychro codebases — not
+  consumer-facing instructions for calling a Naftiko API, because there is no Naftiko API
+  to call. They are recorded here because they are the direct analogue for a provider whose
+  shipped artifact is software rather than a hosted endpoint, and because they are entirely
+  provider-authored. A reader deciding what Naftiko's agent posture is should weigh that.
+skill_count: 3
+skills:
+  - file: naftiko-ikanos-agents.md
+    name: Ikanos — Agent Guidelines
+    method: searched
+    verbatim: true
+    source: https://github.com/naftiko/ikanos/blob/main/AGENTS.md
+    raw: https://raw.githubusercontent.com/naftiko/ikanos/main/AGENTS.md
+    harvested_commit: e258a156a01b
+    harvested_commit_date: '2026-08-17T12:59:02Z'
+    bytes: 29525
+    api: null
+    operations: []
+    covers:
+      - 'Project context — Java 21, Maven multi-module (ikanos-spec, ikanos-engine, ikanos-cli, ikanos-docs)'
+      - 'Key files map, with the capability JSON Schema named as the source of truth an agent must keep in context'
+      - 'Build and test commands, including the -pl/-am reactor trap that makes a single-module clean test fail'
+      - 'Local bootstrap requirements (JDK 21, Maven 3.9+) and which scanners run in CI rather than locally'
+      - 'Windows/PowerShell environment hazards that apply to any file an agent touches'
+    note: >-
+      The internal links point at a stale docs path (/docs/1.0.0-alpha3/) which no longer
+      serves — the live tree is /ikanos/1.0.0-beta3/. Recorded as observed; the file was not
+      corrected, because it is saved verbatim.
+  - file: naftiko-polychro-agents.md
+    name: Polychro — Agent Guidelines
+    method: searched
+    verbatim: true
+    source: https://github.com/naftiko/polychro/blob/main/AGENTS.md
+    raw: https://raw.githubusercontent.com/naftiko/polychro/main/AGENTS.md
+    bytes: 12728
+    api: null
+    operations: []
+    covers:
+      - 'Project context — a polyglot spec linting engine with pluggable validators via a Java SPI'
+      - 'Full module map across 15 modules, including polychro-capability, "the Naftiko/Ikanos MCP adapter exposing Polychro as an MCP server"'
+      - 'The composable lint pipeline: well-formedness → schema-model → ruleset → format-aware'
+      - 'Output formats — SARIF, JSON, text, and LLM-native (agent) output'
+  - file: naftiko-agents-shared-instructions.md
+    name: agents-shared skill discovery
+    method: searched
+    verbatim: true
+    source: https://github.com/naftiko/ikanos/blob/main/.github/instructions/agents-shared.instructions.md
+    bytes: 3105
+    api: null
+    operations: []
+    format: 'SKILL.md-style front matter (name + description trigger list) over markdown steps'
+    covers:
+      - 'How an agent fetches a shared skill from the agents-shared capability before following it'
+      - 'The three transversal skills it serves: pr-review, bugfix, ikanos-capability'
+      - 'Staleness detection by comparing the local SKILL.md version field against the server''s'
+      - 'Per-OS sync one-liners (PowerShell and bash) against the Skill Server'
+      - 'Rules — synced copies are git-ignored, never committed, never edited in place'
+    note: >-
+      The most interesting of the three, because it is Naftiko dogfooding its own Skill
+      exposure adapter: the skills are served by an Ikanos capability running `ikanos serve`,
+      not committed to the repo. It documents a real HTTP contract — GET {server}/skills/
+      <skill> for the published version and GET {server}/skills/<skill>/download for a zip.
+skill_server:
+  description: >-
+    A Naftiko-operated-in-name-only surface, recorded for completeness. The instructions
+    document a Skill Server contract but it is self-hosted like everything else here.
+  default_url: http://localhost:9700
+  env_override: AGENTS_SHARED_URL
+  endpoints:
+    - {method: GET, path: '/skills/<skill>', purpose: 'exposes the published skill version'}
+    - {method: GET, path: '/skills/<skill>/download', purpose: 'returns the skill folder as a zip'}
+  content_source: https://github.com/naftiko/golden-repo-naftiko
+  content_availability: >-
+    NOT public. The golden repo that holds the actual SKILL.md bodies returns 404 to an
+    authenticated request, so the three skills it serves (pr-review, bugfix,
+    ikanos-capability) could not be harvested. Only the discovery protocol is public. This
+    is why skill_count is 3 and not 6 — the pipeline records what it could actually read.
+not_generated_note: >-
+  No API-consumption skills were authored for Naftiko. The pipeline's rule is that every
+  step must be grounded in a real operationId grepped from a real spec; with no Naftiko
+  OpenAPI in the repo there is nothing to ground them in, and inventing plausible steps
+  against the CLI or control port would produce exactly the kind of artifact this pipeline
+  exists to avoid.

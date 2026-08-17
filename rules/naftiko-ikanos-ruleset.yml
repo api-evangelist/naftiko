@@ -1,0 +1,575 @@
+# generated: '2026-08-17'
+# method: searched
+# source: https://github.com/naftiko/ikanos/blob/main/modules/ikanos-spec/src/main/resources/rules/ikanos-rules.yml
+# raw: https://raw.githubusercontent.com/naftiko/ikanos/main/modules/ikanos-spec/src/main/resources/rules/ikanos-rules.yml
+# Verbatim first-party governance ruleset shipped inside Naftiko's Ikanos engine
+# (module ikanos-spec, Apache 2.0). It is the default rule pack Polychro enforces
+# against Ikanos capability YAML. 33 rules: 14 error, 16 warn, 3 info. Rule shape is
+# Spectral-compatible (message/description/severity/given/then) with custom JS
+# functions under ./functions. Nothing below was written by API Evangelist.
+# yaml-language-server: $schema=ruleset-schema.json
+# Ikanos Polychro Ruleset v0.6
+#
+# A Spectral ruleset adapted to the Ikanos Specification v0.6.
+#
+# IMPORTANT:
+# - This ruleset intentionally avoids duplicating constraints already enforced
+#   by src/main/resources/schemas/ikanos-schema.json.
+# - It focuses on cross-object consistency, style hygiene, and security checks.
+# - It supports full capabilities, shared section documents (root-level
+#   `consumes`, `exposes`, `aggregates`, `binds`), and import directives.
+#
+# Usage:
+#   npx @stoplight/spectral-cli lint my-capability.yml --ruleset ikanos-rules.yml
+#
+# Rules are organized into six categories:
+#   1. Structure & consistency      — validate cross-object constraints not covered by schema
+#   2. Quality & discoverability    — promote good description hygiene for agent discovery
+#   3. Security                     — guard against injection and unsafe content
+#   4. Control port                 — control adapter constraints
+#   5. Script steps                 — script step defaults
+#   6. Imports                      — unified import directive validation (§11 of blueprint)
+
+extends: []
+
+functionsDir: ./functions
+
+functions:
+  - unique-namespaces
+  - aggregate-semantics-consistency
+  - aggregate-function-unique
+  - control-port-validation
+  - script-defaults-required
+  - standalone-no-imports
+  - import-alias-unique
+  - tunnel-identity-binds-ref
+
+rules:
+
+  # ────────────────────────────────────────────────────────────────
+  # 1. STRUCTURE & CONSISTENCY
+  # ────────────────────────────────────────────────────────────────
+
+  ikanos-namespaces-unique:
+    message: "Namespaces must be globally unique across all adapters and bindings."
+    description: >
+      The same namespace must not be reused across root `consumes`,
+      `capability.consumes`, `capability.exposes`, root `binds`,
+      and `capability.binds`.
+      This prevents ambiguous routing, reference resolution, and
+      variable resolution.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: unique-namespaces
+
+  ikanos-consumes-baseuri-no-trailing-slash:
+    message: "The `consumes.baseUri` should not have a trailing slash."
+    description: >
+      A trailing slash on the baseUri can cause double-slash issues when the
+      resource path is appended (e.g. https://api.example.com//users).
+    severity: warn
+    recommended: true
+    given:
+      - "$.consumes[*].baseUri"
+      - "$.capability.consumes[*].baseUri"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "/$"
+
+  ikanos-consumed-resource-no-query-in-path:
+    message: "Consumed resource `path` must not contain a query string. Use `inputParameters` with `in: query` instead."
+    description: >
+      Query parameters belong in the inputParameters array with in: query,
+      not in the path string.
+    severity: warn
+    recommended: true
+    given:
+      - "$.consumes[?(@.type == 'http')].resources[*].path"
+      - "$.capability.consumes[?(@.type == 'http')].resources[*].path"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "\\?"
+
+  ikanos-rest-resource-path-no-trailing-slash:
+    message: "Exposed resource `path` must not have a trailing slash."
+    description: >
+      Trailing slashes on resource paths can cause confusion in routing,
+      documentation, and client code generation.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[?(@.type == 'rest')].resources[*].path"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "/$"
+
+  ikanos-rest-resource-path-no-query:
+    message: "Exposed resource `path` must not contain a query string. Use `inputParameters` with `in: query` instead."
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[?(@.type == 'rest')].resources[*].path"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "\\?"
+
+  ikanos-address-not-example:
+    message: "Server `address`, when present, should not be example.com."
+    description: >
+      Placeholder hosts are discouraged in production-bound capability documents.
+    severity: warn
+    recommended: true
+    given:
+      - "$.capability.exposes[?(@.type == 'rest')].address"
+      - "$.capability.exposes[?(@.type == 'mcp')].address"
+      - "$.capability.exposes[?(@.type == 'skill')].address"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "example\\.com$"
+
+  ikanos-aggregate-flow-description:
+    message: "Each aggregate flow should have a `description` field."
+    description: >
+      Flow descriptions are inherited by adapter units and improve agent
+      discoverability.
+    severity: warn
+    recommended: true
+    given: "$.capability.aggregates[*].flows[*]"
+    then:
+      field: "description"
+      function: truthy
+
+  ikanos-aggregate-semantics-consistency:
+    message: "Aggregate flow semantics must be consistent with MCP tool hints and REST operation methods."
+    description: >
+      When an MCP tool or REST operation references an aggregate flow via `ref`,
+      any explicit hints or HTTP methods should not contradict the flow's declared
+      semantics. For example, a safe flow should not have destructive=true hints
+      or use a POST/DELETE method.
+    severity: warn
+    recommended: true
+    given: "$"
+    then:
+      function: aggregate-semantics-consistency
+
+  ikanos-mcp-auth-stdio-conflict:
+    message: "MCP `authentication` should not be set when `transport` is `stdio`."
+    description: >
+      Per MCP specification §1.2, stdio transport should not follow the HTTP
+      authorization flow — credentials are retrieved from the environment instead.
+      Authentication is only meaningful for the HTTP transport.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[?(@.type == 'mcp' && @.transport == 'stdio')]"
+    then:
+      field: "authentication"
+      function: falsy
+
+  ikanos-oauth2-https-authserver:
+    message: "OAuth2 `authorizationServerUri` must use the `https://` scheme."
+    description: >
+      The OAuth 2.1 specification requires all authorization server endpoints to be
+      served over HTTPS. A non-HTTPS authorization server URI is a security risk.
+    severity: error
+    recommended: true
+    given: "$.capability.exposes[*].authentication[?(@.type == 'oauth2')]"
+    then:
+      field: "authorizationServerUri"
+      function: pattern
+      functionOptions:
+        match: "^https://"
+
+  ikanos-oauth2-resource-https:
+    message: "OAuth2 `resource` should use the `https://` scheme for production."
+    description: >
+      The resource URI identifies this server in Protected Resource Metadata and
+      audience validation. Using HTTPS ensures proper security in production.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[*].authentication[?(@.type == 'oauth2')]"
+    then:
+      field: "resource"
+      function: pattern
+      functionOptions:
+        match: "^https://"
+
+  ikanos-oauth2-scopes-defined:
+    message: "OAuth2 authentication should define `scopes` for scope challenge support."
+    description: >
+      Defining scopes enables the server to include scope information in
+      WWW-Authenticate challenges and Protected Resource Metadata, improving
+      client interoperability.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[*].authentication[?(@.type == 'oauth2')]"
+    then:
+      field: "scopes"
+      function: truthy
+
+  # ────────────────────────────────────────────────────────────────
+  # 2. QUALITY & DISCOVERABILITY
+  # ────────────────────────────────────────────────────────────────
+
+  ikanos-info-tags:
+    message: "The `info.tags` array should be present and non-empty."
+    description: >
+      Tags help categorize the capability for discovery and filtering.
+      At least one tag improves agent cataloging.
+    severity: info
+    recommended: false
+    given: "$.info"
+    then:
+      field: "tags"
+      function: truthy
+
+  ikanos-consumes-description:
+    message: "Each `consumes` entry should have a `description` field."
+    description: >
+      A description of the consumed API improves agent understanding of
+      what external service is being used and why.
+    severity: warn
+    recommended: true
+    given:
+      - "$.consumes[*]"
+      - "$.capability.consumes[*]"
+    then:
+      field: "description"
+      function: truthy
+
+  ikanos-rest-resource-description:
+    message: "Each exposed REST resource should have a `description` field."
+    description: >
+      Resource descriptions are used by agents to understand the purpose of
+      each endpoint. In a world of agents, context is king.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[?(@.type == 'rest')].resources[*]"
+    then:
+      field: "description"
+      function: truthy
+
+  ikanos-rest-operation-description:
+    message: "Exposed REST operations should have a `description` field."
+    description: >
+      Analogous to operation-description in OAS. Descriptions help agents
+      understand which operations to invoke and when.
+    severity: info
+    recommended: false
+    given: "$.capability.exposes[?(@.type == 'rest')].resources[*].operations[*]"
+    then:
+      field: "description"
+      function: truthy
+
+  # ikanos-steps-name-pattern was removed: step names are now map keys in the
+  # named-object format (alpha3+). The pattern ^[A-Za-z0-9_-]+$ is enforced
+  # by the JSON Schema propertyNames/IdentifierKebab constraint on every steps
+  # map, making this Polychro rule redundant.
+
+  # ────────────────────────────────────────────────────────────────
+  # 3. SECURITY
+  # ────────────────────────────────────────────────────────────────
+
+  ikanos-no-script-tags-in-markdown:
+    message: "Markdown fields must not contain <script> tags."
+    description: >
+      Analogous to no-script-tags-in-markdown (OAS) and arazzo-no-script-tags-in-markdown.
+      Protects against XSS attacks when capability documents from third parties
+      are rendered in HTML documentation or agent UIs.
+    severity: error
+    recommended: true
+    given:
+      - "$.info.description"
+      - "$.info.label"
+      - "$.capability.exposes[*].description"
+      - "$.capability.exposes[?(@.type == 'rest')].resources[*].description"
+      - "$.capability.exposes[?(@.type == 'rest')].resources[*].operations[*].description"
+      - "$.capability.exposes[?(@.type == 'mcp')].tools[*].description"
+      - "$.capability.exposes[?(@.type == 'skill')].skills[*].description"
+      - "$.consumes[*].description"
+      - "$.capability.consumes[*].description"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "<script"
+
+  ikanos-no-eval-in-markdown:
+    message: "Markdown fields must not contain eval() calls."
+    description: >
+      Analogous to no-eval-in-markdown (OAS). Protects against JavaScript
+      injection attacks when description content is rendered in
+      HTML/JS-based documentation or agent tooling.
+    severity: error
+    recommended: true
+    given:
+      - "$.info.description"
+      - "$.info.label"
+      - "$.capability.exposes[*].description"
+      - "$.capability.exposes[?(@.type == 'rest')].resources[*].description"
+      - "$.capability.exposes[?(@.type == 'rest')].resources[*].operations[*].description"
+      - "$.capability.exposes[?(@.type == 'mcp')].tools[*].description"
+      - "$.capability.exposes[?(@.type == 'skill')].skills[*].description"
+      - "$.consumes[*].description"
+      - "$.capability.consumes[*].description"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "eval\\("
+
+  ikanos-baseuri-not-example:
+    message: "The `consumes.baseUri` should not point to example.com."
+    description: >
+      Analogous to oas2-host-not-example and oas3-server-not-example.com.
+      Placeholder example.com URIs should never appear in production-bound
+      capability documents — use real service URLs instead.
+    severity: warn
+    recommended: false
+    given:
+      - "$.consumes[*].baseUri"
+      - "$.capability.consumes[*].baseUri"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "example\\.com"
+
+  # ────────────────────────────────────────────────────────────────
+  # 4. CONTROL PORT
+  # ────────────────────────────────────────────────────────────────
+
+  ikanos-control-port-singleton-and-unique:
+    message: "Control port validation failed."
+    description: >
+      At most one type: control adapter is allowed per capability, and its
+      port must not conflict with any business adapter port.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: control-port-validation
+
+  ikanos-control-address-localhost-warning:
+    message: "Control adapter `address` should be `localhost` or `127.0.0.1` for security."
+    description: >
+      Binding the control port to a non-localhost address exposes management
+      endpoints to the network. Use a Kubernetes NetworkPolicy or firewall
+      rule to restrict access in production.
+    severity: warn
+    recommended: true
+    given: "$.capability.exposes[?(@.type == 'control')].address"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(localhost|127\\.0\\.0\\.1)$"
+
+  # ────────────────────────────────────────────────────────────────
+  # 5. SCRIPT STEPS
+  # ────────────────────────────────────────────────────────────────
+
+  ikanos-script-defaults-required:
+    message: >-
+      {{error}}
+    description: >
+      Every script step must have a resolvable scripts directory and language.
+      When a step omits 'location' or 'language', the engine falls back to
+      'management.scripting.defaultLocation' or 'management.scripting.defaultLanguage'
+      on the control adapter. If neither is set, the capability will fail at load time.
+      This rule catches the misconfiguration at lint time.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: script-defaults-required
+
+  # ────────────────────────────────────────────────────────────────
+  # 6. IMPORTS — Unified import directive validation
+  # ────────────────────────────────────────────────────────────────
+  # See blueprints/unified-import-mechanism.md §11 for the full rule catalog.
+  # Cross-file reference integrity (§11.2) is enforced by the engine resolver,
+  # not by Spectral, because it requires file-system access.
+
+  # §11.1 — Import directive structure
+
+  ikanos-import-from-required:
+    message: "Import entry must have both 'from' and 'import' fields."
+    description: >
+      Every import entry in a capability's consumes, exposes, aggregates, or binds
+      section must specify 'from' (the source file path) and 'import' (the namespace
+      to take from that source). An entry with only one of the two is invalid.
+    severity: error
+    recommended: true
+    given:
+      - "$.capability.consumes[?(@.from)]"
+      - "$.capability.exposes[?(@.from)]"
+      - "$.capability.aggregates[?(@.from)]"
+      - "$.capability.binds[?(@.from)]"
+    then:
+      field: "import"
+      function: truthy
+
+  ikanos-import-import-required:
+    message: "Import entry must have both 'from' and 'import' fields."
+    description: >
+      Complement of ikanos-import-from-required: catches entries that have 'import'
+      but are missing 'from'.
+    severity: error
+    recommended: true
+    given:
+      - "$.capability.consumes[?(@.import && !@.type)]"
+      - "$.capability.exposes[?(@.import && !@.type)]"
+      - "$.capability.aggregates[?(@.import && !@.type)]"
+      - "$.capability.binds[?(@.import && !@.type)]"
+    then:
+      field: "from"
+      function: truthy
+
+  ikanos-import-unique-alias:
+    message: "Import alias uniqueness validation failed."
+    description: >
+      Within each section of a capability, the effective namespace of imported entries
+      (the 'as' alias, or 'import' when no 'as') must be unique. Duplicate effective
+      namespaces would cause ambiguous resolution after imports are materialized.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: import-alias-unique
+
+  ikanos-import-from-not-self:
+    message: "Import 'from' should not point to the current directory."
+    description: >
+      An import 'from' field that is a bare dot ('.') is always an authoring error
+      because it resolves to the importing file's own directory.
+      The engine resolver catches the actual self-reference at runtime.
+    severity: warn
+    recommended: true
+    given:
+      - "$.capability.consumes[?(@.from)].from"
+      - "$.capability.exposes[?(@.from)].from"
+      - "$.capability.aggregates[?(@.from)].from"
+      - "$.capability.binds[?(@.from)].from"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "^\\.$"
+
+  # §11.3 — Layer enforcement (standalone files must not contain imports)
+
+  ikanos-standalone-no-imports:
+    message: "{{error}}"
+    description: >
+      Standalone section files (documents without a 'capability' key) are leaves
+      in the import DAG. They must not contain import entries (entries with a 'from'
+      field). Only capability documents may import from other files.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: standalone-no-imports
+
+  # §11.4 — Section-specific: namespace required (importability)
+
+  ikanos-exposes-namespace-required:
+    message: "Each exposed adapter must have a 'namespace' to be importable."
+    description: >
+      Without a namespace, an exposed adapter cannot be referenced by an
+      import directive from another file. Applies to standalone source files
+      (root-level 'exposes' array) and to inline entries under
+      'capability.exposes' that declare a 'type' (i.e. local definitions,
+      not import entries — which have 'from' instead).
+    severity: error
+    recommended: true
+    given:
+      - "$.exposes[*]"
+      - "$.capability.exposes[?(@.type)]"
+    then:
+      field: "namespace"
+      function: truthy
+
+  ikanos-aggregates-namespace-required:
+    message: "Each aggregate must have a 'namespace' to be importable."
+    description: >
+      Without a namespace, an aggregate cannot be referenced by an import
+      directive from another file. Applies to standalone source files
+      (root-level 'aggregates' array) and to inline entries under
+      'capability.aggregates' that declare 'functions' (i.e. local
+      definitions, not import entries — which have 'from' instead).
+    severity: error
+    recommended: true
+    given:
+      - "$.aggregates[*]"
+      - "$.capability.aggregates[?(@.functions)]"
+    then:
+      field: "namespace"
+      function: truthy
+
+  ikanos-aggregates-unique-function-name:
+    message: "Aggregate function names must be unique within the same aggregate."
+    description: >
+      Duplicate function names within a single aggregate would cause ambiguous
+      'call' and 'ref' resolution. Applies to both standalone and capability documents.
+    severity: error
+    recommended: true
+    given:
+      - "$.aggregates[*].functions"
+      - "$.capability.aggregates[*].functions"
+    then:
+      function: aggregate-function-unique
+
+  # Reverse Tunnel (blueprint: reverse-tunnel-private-network.md, Phase 1)
+
+  ikanos-tunnel-identity-must-bind:
+    message: "tunnel.identity must reference a declared binding."
+    description: >
+      When a ConsumesHttp 'tunnel' uses Mustache references in 'identity'
+      (for example `{{secrets.ZITI_IDENTITY}}`), every referenced namespace and key
+      must be declared in the document's 'binds' or 'capability.binds' section.
+      Bare filesystem paths are accepted but discouraged.
+    severity: error
+    recommended: true
+    given: "$"
+    then:
+      function: tunnel-identity-binds-ref
+
+  ikanos-tunnel-fallback-direct-warns:
+    message: >
+      'tunnel.fallback: direct' on a non-loopback baseUri silently bypasses the
+      tunnel and may leak traffic. Use 'fail' unless the baseUri itself is
+      private/loopback.
+    description: >
+      A direct fallback means the engine will skip the tunnel and dial the baseUri
+      directly when the tunnel cannot be opened. For public baseUris this defeats
+      the privacy guarantees of the tunnel. Use 'fail' (the default) and let the
+      operator decide how to recover.
+    severity: warn
+    recommended: true
+    given:
+      - "$.capability.consumes[?(@.tunnel && @.tunnel.fallback == 'direct')].baseUri"
+      - "$.consumes[?(@.tunnel && @.tunnel.fallback == 'direct')].baseUri"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^https?://(127\\.0\\.0\\.1|localhost|\\[::1\\])(:|/|$)"
+
+  ikanos-tunnel-with-public-baseuri-warns:
+    message: >
+      Tunnel target uses a public TLD baseUri — confirm the hostname truly resolves
+      through the tunnel and not via public DNS.
+    description: >
+      A 'tunnel' is intended for reaching APIs on private networks. When the
+      baseUri points to a public TLD (.com, .net, .io, ...), the configuration
+      may still be correct (the tunnel can override DNS), but it is worth
+      double-checking that the upstream is not unintentionally reached over the
+      public internet.
+    severity: info
+    recommended: true
+    given:
+      - "$.capability.consumes[?(@.tunnel)].baseUri"
+      - "$.consumes[?(@.tunnel)].baseUri"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "^https?://[^/]+\\.(com|net|org|io|co|app|dev|cloud|ai)(:|/|$)"

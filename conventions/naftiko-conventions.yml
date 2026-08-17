@@ -1,0 +1,117 @@
+generated: '2026-08-17'
+method: derived
+source: json-schema/naftiko-ikanos-capability-schema.json
+docs: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/spec/
+provider: Naftiko
+providerId: naftiko
+description: >-
+  The cross-cutting semantics Naftiko publishes. Read this with one thing held firmly in
+  mind: these are conventions of the SPECIFICATION Naftiko ships, not of a Naftiko-operated
+  API. There is no Naftiko API to call, so there is no Naftiko request envelope, no Naftiko
+  pagination and no Naftiko error format. What is genuinely published is the vocabulary a
+  capability author uses to declare those things about their OWN surface, plus the one HTTP
+  surface Naftiko really does specify: the Control port on a running capability. Both are
+  captured below and kept apart, because conflating them is how a product feature gets
+  scored as a provider commitment.
+authentication:
+  applies_to: 'the capability author''s upstreams and downstreams, not Naftiko'
+  consumed_upstream: ['Bearer', 'API key', 'basic', 'digest', 'OAuth 2.1']
+  exposed_downstream: 'OAuth2 exposure is exercised end-to-end against Keycloak in the repo''s e2e fixtures (.github/e2e/resources/features/exposed-oauth2/)'
+  naftiko_issued_credentials: none
+  source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/features/
+idempotency:
+  naftiko_api_contract: none
+  declarable: true
+  description: >-
+    Idempotency exists in this product as a DECLARATION an author makes, in two places in
+    the capability schema, and nowhere as a retry contract Naftiko offers a caller.
+  declarations:
+    - path: '$defs.Semantics.idempotent'
+      applies_to: 'any invocable unit'
+      published_description: 'If true, repeating the call has no additional effect. Default: false.'
+      siblings: ['safe — the function does not modify state', 'cacheable — the result can be cached']
+      schema_note: 'Semantics is described in the schema as "transport-neutral behavioral metadata for an invocable unit. Used for design-time tooling and adapter derivations (e.g. MCP hints)."'
+    - path: '$defs.McpToolHints.idempotent'
+      applies_to: 'an exposed MCP tool'
+      published_description: 'If true, calling the tool repeatedly with the same arguments has no additional effect. Meaningful only when readOnly is false. Default: false.'
+      siblings: ['readOnly', 'destructive', 'openWorld']
+      schema_note: 'These are the MCP protocol tool annotations, carried through from the capability spec to the generated MCP server.'
+  idempotency_key_header: not-published
+  retention: not-applicable
+  pointer_decision: >-
+    NO `type: Idempotency` pointer was emitted, and the omission is deliberate. The
+    agent-readiness idempotency dimension asks whether an agent can safely retry a call to
+    THIS provider. Naftiko exposes no callable surface, so the honest answer is that the
+    question does not apply — there is no idempotency key, no retention window and no
+    replay contract. Wiring the pointer on the strength of a boolean field in a schema
+    Naftiko sells would convert a product feature into a provider commitment and take 9
+    points for a contract that does not exist. Same reasoning the prior round used to
+    decline a Compliance pointer for the "continuous compliance" row on the editions page.
+pagination:
+  naftiko_api_contract: none
+  declarable: false
+  status: roadmap
+  detail: '"Pagination at consumes and exposes level" is listed as future work. No pagination vocabulary exists in the v1.0.0-beta5 capability schema — a search of the schema for cursor/offset/pagination returns nothing.'
+  source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+error_envelope:
+  naftiko_api_contract: none
+  format: not-published
+  detail: >-
+    No error envelope, problem-details format or error-code registry is documented on any
+    public Naftiko surface, and there is no OpenAPI to derive one from. This is why no
+    errors/ artifact was written — an error catalog here would have to be invented. The
+    only error semantics Naftiko genuinely publishes are CLI exit codes, below.
+  rfc9457: unknown
+cli_exit_codes:
+  source: cli/naftiko-cli.yml
+  note: 'The one published failure vocabulary. Captured in full in the CLI artifact; summarised here because it is the de-facto error contract for the shipped binary.'
+  codes:
+    - {code: 0, meaning: 'Success.'}
+    - {code: 1, meaning: 'Completed but produced a negative result — validation failed, control-port endpoint returned non-200, prompt was empty.'}
+    - {code: 2, meaning: 'Unexpected exception thrown during execution.'}
+control_port:
+  description: >-
+    The only HTTP surface Naftiko specifies rather than generates. Every running capability
+    exposes it, at a host and port the operator chooses, so it has no Naftiko base URL and
+    is not listed as an apis[] entry. Naftiko publishes no OpenAPI for it.
+  default_port: 9090
+  default_host: localhost
+  endpoints:
+    - {method: GET, path: /health/live, purpose: liveness}
+    - {method: GET, path: /health/ready, purpose: readiness}
+    - {method: GET, path: /status, purpose: 'capability identity, uptime, started adapters'}
+    - {method: GET, path: /metrics, purpose: 'Prometheus exposition format'}
+    - {method: GET, path: /traces, purpose: 'recent traces from the engine ring buffer'}
+    - {method: GET, path: /scripting, purpose: 'scripting governance configuration and execution stats'}
+  configuration_precedence: '--address/--port flag → IKANOS_CONTROL_ADDRESS / IKANOS_CONTROL_PORT → the address and port declared in the local capability YAML → localhost:9090'
+  source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+observability:
+  tracing: 'OpenTelemetry; the engine keeps a trace ring buffer surfaced through GET /traces and `ikanos traces`'
+  metrics: 'RED metrics in Prometheus exposition format on GET /metrics'
+  shipped_config: 'An OTel collector config, Grafana dashboards and a Prometheus scrape config ship in modules/ikanos-docs/demo/observability/'
+  correlation: 'Gateway context propagation via OpenTelemetry is a roadmap item, not shipped'
+  source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/features/
+versioning:
+  engine: 'semver with prerelease — v1.0.0-beta4 at harvest'
+  specification: 'versioned independently of the engine; the schema declares const "1.0.0-beta5" for the `ikanos` root key while the engine is at beta4'
+  compatibility_claim: 'Naftiko states "the same capability YAML survives every upgrade unchanged" and "when the MCP transport revises, it''s an engine bump — your YAML is unchanged."'
+  detail: lifecycle/naftiko-lifecycle.yml
+rate_limit_signaling:
+  published: false
+  detail: rate-limits/naftiko-rate-limits.yml
+governance:
+  ruleset: rules/naftiko-ikanos-ruleset.yml
+  rule_count: 33
+  severities: {error: 14, warn: 16, info: 3}
+  note: >-
+    The closest thing Naftiko has to a published style guide: 33 first-party rules across
+    structure/consistency, quality/discoverability, security, control port, script steps and
+    imports — enforced by Polychro at spec validation, in CI merge gates, and (with Skipper,
+    Enterprise) at Kubernetes admission.
+cross_links:
+  - lifecycle/naftiko-lifecycle.yml
+  - rate-limits/naftiko-rate-limits.yml
+  - conformance/naftiko-conformance.yml
+  - cli/naftiko-cli.yml
+  - json-schema/naftiko-ikanos-capability-schema.json
+  - rules/naftiko-ikanos-ruleset.yml

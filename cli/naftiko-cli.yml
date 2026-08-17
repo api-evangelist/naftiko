@@ -1,0 +1,64 @@
+generated: '2026-08-17'
+method: searched
+source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+docs: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+repo: https://github.com/naftiko/ikanos
+description: >-
+  The `ikanos` CLI — Naftiko's first-party command-line surface and the single entry point
+  for creating, validating, importing, exporting, running and inspecting Ikanos
+  capabilities. Captured verbatim from the published CLI reference, which Naftiko
+  describes as "a complete reference: every command, every option, every exit code that
+  the binary exposes". Polychro ships a second CLI (io.polychro:polychro-cli) for
+  linting. The binaries themselves are catalogued in packages/naftiko-packages.yml.
+synopsis: 'ikanos [-hV] <command> [<subcommand>] [options] [arguments]'
+version_observed: v1.0.0-beta4
+install:
+  docker: 'docker run -v "$PWD/capability.yaml:/app/ikanos.yaml" ghcr.io/naftiko/ikanos'
+  binary_macos: 'Download ikanos-cli-macos-arm64 from https://github.com/naftiko/ikanos/releases and place on PATH'
+  binary_linux: 'Download ikanos-cli-linux-amd64 or ikanos-cli-linux-arm64 from https://github.com/naftiko/ikanos/releases'
+  binary_windows: 'Download ikanos-cli-windows-amd64.exe from https://github.com/naftiko/ikanos/releases'
+  maven: 'io.ikanos:ikanos-cli — runnable JAR / native image'
+global_options:
+  - {name: '-h, --help', description: 'Show help and exit. Available on every command and subcommand.'}
+  - {name: '-V, --version', description: 'Print the schema version of the running CLI and exit.'}
+commands:
+  authoring:
+    - {name: 'create capability', aliases: 'cap', description: 'Interactively scaffold a new capability configuration file. Prompts on stdin for capability name, target URI and port, then writes a YAML capability file in the current directory.'}
+    - {name: 'validate <file> [<schema-version>]', aliases: 'v, val', description: 'Validate a YAML capability configuration file against the Ikanos JSON Schema. Schema version is optional (format x.x) and defaults to the latest bundled with the CLI. Exit 0 valid, 1 missing/malformed/invalid.'}
+  interop:
+    - {name: 'import openapi <source>', description: 'Import a Swagger 2.0, OAS 3.0 or OAS 3.1 specification into an Ikanos consumes YAML file. Options: -o/--output, -n/--namespace, -f/--format <yaml|json>. Source may be a path or a URL.'}
+    - {name: 'export openapi <capability>', description: "Export a capability's REST adapter as an OpenAPI specification. Options: -o/--output, -f/--format <yaml|json>, -a/--adapter <namespace> (required when more than one REST adapter is exposed), --spec-version <3.0|3.1> (defaults 3.0)."}
+  runtime:
+    - {name: 'serve [<file>]', aliases: 's', description: 'Run a capability and block until stopped (Ctrl-C / SIGTERM). Defaults to ikanos.yaml in the working directory. The CLI invocation and the container invocation share an identical command contract.'}
+  control_port:
+    - {name: health, description: 'Check liveness and readiness of a running capability. Calls GET /health/live and GET /health/ready and prints both statuses.'}
+    - {name: status, description: 'Retrieve runtime status — capability identity, uptime, started adapters. Calls GET /status.'}
+    - {name: 'metrics [--filter <regex>]', description: 'Fetch Prometheus exposition-format metrics from the control port. --filter applies a regex to metric names.'}
+    - {name: 'traces [<trace-id>]', description: "Inspect recent traces from the engine's ring buffer. List mode filters with --operation <name> and --status <OK|ERROR>; passing a trace ID switches to detail mode."}
+    - {name: 'scripting [--set <key=value>...]', description: 'Read or update scripting governance on a running capability. Without --set, prints the current configuration and execution stats.'}
+control_port:
+  description: >-
+    The control-port commands talk to a documented HTTP surface exposed by a running
+    capability. It is self-hosted — there is no Naftiko-operated host — so it is recorded
+    here rather than as an apis[] entry with a base URL. Naftiko publishes no OpenAPI for
+    it; nothing below was derived beyond what the CLI reference states.
+  endpoints:
+    - {method: GET, path: /health/live}
+    - {method: GET, path: /health/ready}
+    - {method: GET, path: /status}
+    - {method: GET, path: /metrics, note: 'Prometheus exposition format'}
+    - {method: GET, path: /traces}
+    - {method: GET, path: /scripting}
+  shared_options:
+    - {name: '--address <host>', description: 'Control-port host. Falls back to IKANOS_CONTROL_ADDRESS, then the address declared in the local capability YAML, then localhost.'}
+    - {name: '--port <int>', description: 'Control port. Falls back to IKANOS_CONTROL_PORT, then the port declared in the local capability YAML, then 9090.'}
+environment_variables:
+  - {name: IKANOS_CONTROL_ADDRESS, used_by: 'health, status, metrics, traces, scripting', purpose: 'Default control-port host when --address is not provided.'}
+  - {name: IKANOS_CONTROL_PORT, used_by: 'health, status, metrics, traces, scripting', purpose: 'Default control-port port when --port is not provided.'}
+exit_codes:
+  - {code: 0, meaning: Success.}
+  - {code: 1, meaning: 'The operation completed but produced a negative result — validation failed, control-port endpoint returned non-200, prompt was empty.'}
+  - {code: 2, meaning: 'Unexpected exception thrown during execution.'}
+  - {code: non-zero, meaning: 'Any other failure — I/O error, parse error, capability start-up failure.'}
+related:
+  - {name: Polychro CLI, package: 'io.polychro:polychro-cli', docs: 'https://shipyard.naftiko.io/polychro/', note: 'Deterministic linter invoked as `polychro lint capability.yaml`; enforces rules/naftiko-ikanos-ruleset.yml.'}

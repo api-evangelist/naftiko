@@ -1,0 +1,78 @@
+generated: '2026-08-17'
+method: searched
+source: https://github.com/naftiko/ikanos/releases
+docs: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/releases/
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Naftiko's dated release record for Ikanos, the product it versions publicly. Two
+  surfaces carry it: a GitHub Releases feed with signed tags and attached CLI binaries,
+  and a Releases page in the Shipyard docs that adds the end-of-life date, the Java
+  baseline and the Maven groupId per version. There is no separate marketing changelog;
+  narrative release notes are published as blog posts on naftiko.io/blog. Polychro
+  versions on the same train (1.0.0-beta4) but publishes no GitHub Releases of its own.
+scheme: semver-with-prerelease
+current_version: v1.0.0-beta4
+current_version_date: '2026-08-17'
+cadence: 'roughly every 2-3 weeks through the alpha/beta train (2026-04-02 → 2026-08-17)'
+surfaces:
+  - {name: 'GitHub Releases (Ikanos)', url: 'https://github.com/naftiko/ikanos/releases', dated: true, machine_readable: true}
+  - {name: 'Docs — Releases + EOL table', url: 'https://shipyard.naftiko.io/ikanos/1.0.0-beta3/releases/', dated: true, machine_readable: false}
+  - {name: 'Blog release announcements', url: 'https://naftiko.io/resources/blog', dated: true, machine_readable: 'RSS at https://naftiko.io/feed.xml'}
+  - {name: 'Docs — Roadmap', url: 'https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/', dated: false, machine_readable: false}
+entries:
+  - version: v1.0.0-beta4
+    codename: Barquentine
+    date: '2026-08-17'
+    breaking: unstated
+    highlights:
+      - 'Published to Maven Central under io.ikanos and to ghcr.io/naftiko/ikanos + docker.io/naftiko/ikanos the same day.'
+      - 'Native CLI binaries for linux-amd64, linux-arm64, macos-arm64 and windows-amd64.'
+  - version: v1.0.0-beta3
+    codename: Brigantine
+    date: '2026-08-03'
+    breaking: unstated
+    highlights:
+      - 'Announced on the site banner as "Beta 3 released — Five Fragmented Specs, One Ikanos Capability".'
+  - version: v1.0.0-beta2
+    codename: Shooner
+    date: '2026-07-15'
+    breaking: unstated
+    eol: TBD
+  - version: v1.0.0-beta1
+    codename: Ketch
+    date: '2026-06-29'
+    eol: '2026-07-15'
+    breaking: unstated
+    highlights:
+      - 'First release Naftiko describes as stable enough for real integrations, after four hardening alphas.'
+      - 'Binary content end-to-end — declare, serve and document binary outputs in pure YAML across REST and MCP.'
+      - 'Native CLI fully fixed, with pre-built binaries for macOS, Linux and Windows.'
+      - 'Spec-Driven Integration — one YAML spec served as MCP, Skill, REST and Control ports.'
+      - '100% Apache 2.0.'
+    announcement: https://naftiko.io/blog/ikanos-1-0-beta1-the-mcp-server-your-agent-needs
+  - version: v1.0.0-alpha4
+    codename: Yawl
+    date: '2026-06-15'
+    eol: '2026-06-26'
+  - version: v1.0.0-alpha3
+    codename: Trimaran
+    date: '2026-05-27'
+    eol: '2026-06-15'
+    breaking: true
+    highlights:
+      - 'Release assets renamed naftiko-cli-* → ikanos-cli-*; Maven groupId moved io.naftiko → io.ikanos. Consumers on alpha1/alpha2 must change coordinates.'
+  - version: v1.0.0-alpha2
+    codename: Catamaran
+    date: '2026-04-30'
+    eol: '2026-05-27'
+    maven_group: io.naftiko
+  - version: v1.0.0-alpha1
+    date: '2026-04-02'
+    eol: '2026-04-30'
+    maven_group: io.naftiko
+note: >-
+  Release-note bodies on the GitHub Releases API were not readable at harvest time (HTTP
+  403, unauthenticated rate limit). Tag names, codenames and publication dates above came
+  from an earlier successful call to the same endpoint; the highlights came from the
+  Naftiko site and the docs Releases page. No entry was inferred.

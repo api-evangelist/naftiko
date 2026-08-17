@@ -1,0 +1,104 @@
+generated: '2026-08-17'
+method: searched
+source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/releases/
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Naftiko's published lifecycle posture. It versions software rather than a hosted API, so
+  the lifecycle surface is a release/EOL table plus a versioned documentation tree — not a
+  Sunset/Deprecation header policy. What is genuinely published: semantic versions with
+  codenames, a per-version end-of-life date, a stated Java baseline with its own EOL, the
+  Maven groupId in force at each version, versioned docs per release, and an itemised
+  public roadmap. What is not published: a status page, an SLA document, RFC 8594
+  Sunset/Deprecation headers, and a security advisory feed.
+versioning:
+  scheme: semver-with-prerelease
+  current: v1.0.0-beta4
+  current_date: '2026-08-17'
+  stability: 'Pre-1.0. Ikanos has been in beta since 2026-06-29; Naftiko calls beta1 "the first release stable enough for real integrations".'
+  spec_versioning:
+    description: >-
+      The capability spec carries its own version, distinct from the engine version. The
+      JSON Schema $id is https://ikanos.io/schemas/v1.0.0-beta2/ikanos.json, `ikanos
+      validate <file> [<schema-version>]` accepts an explicit x.x schema version, and
+      `ikanos -V` prints the schema version of the running CLI rather than the build
+      version. Two repo workflows (synchronize-schema-version-in-other-repos,
+      synchronize-engine-version-in-other-repos) propagate both numbers across the org.
+    compatibility_claim: >-
+      Naftiko states on the editions page that "the same capability YAML survives every
+      upgrade unchanged" and, on the homepage, that "when the MCP transport revises, it's
+      an engine bump — your YAML is unchanged."
+  docs_versioning:
+    style: 'per-release documentation trees at https://shipyard.naftiko.io/ikanos/<version>/'
+    versions_live: ['1.0.0-alpha4', '1.0.0-beta1', '1.0.0-beta2', '1.0.0-beta3']
+    note: 'No /ikanos/1.0.0-beta4/ tree was serving at harvest time (404), one day after the beta4 release — docs lag the release train.'
+deprecation:
+  policy_published: true
+  policy_url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/releases/
+  style: 'per-version end-of-life dates in a public release table'
+  description: >-
+    Every shipped version carries an explicit EOL date, set to the release date of its
+    successor — a strict "latest only" support window with no overlap. The current version
+    shows EOL "TBD". Naftiko also states the supported Java baseline (Java 21 LTS) and its
+    own EOL (September 2028), so a consumer can see the outer bound of the runtime.
+  eol_table:
+    - {version: '1.0 Beta 2', released: '2026-07-15', eol: TBD, java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.ikanos}
+    - {version: '1.0 Beta 1', released: '2026-06-26', eol: '2026-07-15', java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.ikanos}
+    - {version: '1.0 Alpha 4', released: '2026-06-15', eol: '2026-06-26', java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.ikanos}
+    - {version: '1.0 Alpha 3', released: '2026-05-27', eol: '2026-06-15', java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.ikanos}
+    - {version: '1.0 Alpha 2', released: '2026-04-30', eol: '2026-05-27', java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.naftiko}
+    - {version: '1.0 Alpha 1', released: '2026-04-03', eol: '2026-04-30', java: 'Java 21 LTS', java_eol: '2028-09', maven_group: io.naftiko}
+  breaking_changes_observed:
+    - {at: 'v1.0.0-alpha3 (2026-05-27)', change: 'Maven groupId io.naftiko → io.ikanos and release assets naftiko-cli-* → ikanos-cli-*. Coordinates change for every consumer on alpha1/alpha2.'}
+  http_headers:
+    sunset_header: not-published
+    deprecation_header: not-published
+    note: 'RFC 8594 Sunset / Deprecation headers are not part of this surface — the shipped artifact is a container image and a JAR, not a hosted endpoint.'
+status_page:
+  published: false
+  probed:
+    - {url: 'https://status.naftiko.io/', status: 'DNS does not resolve (curl exit 6)'}
+  note: >-
+    No status page exists, and for the Community edition none would apply — the engine
+    runs on the customer's own infrastructure. Managed hosting (Developer/Team editions)
+    is still "in development", and Team is the tier where Naftiko says an SLA attaches, so
+    an availability surface would become relevant only when that ships.
+sla:
+  published: false
+  note: 'The editions comparison marks SLA as included from the Team edition upward, but no SLA document, target or credit schedule is published.'
+support:
+  channel: 'Community support (GitHub Discussions) in every edition; dedicated success engineer at Enterprise.'
+  note: 'https://github.com/orgs/naftiko/discussions returned 404 at harvest time — org-level Discussions are not enabled, so the named community channel is not reachable at the canonical URL. Per-repo issues are open (naftiko/ikanos has public issue templates for bug reports and feature requests).'
+  contact: https://naftiko.io/company/contact-us
+  email: contact@naftiko.io
+roadmap:
+  published: true
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  style: 'itemised, grouped by theme, undated'
+  themes:
+    - name: Rightsize AI context
+      items:
+        - 'Upgrade MCP transport in engine to the July 2026 version of the protocol (no spec impact)'
+        - 'Deterministic orchestration — conditional steps, for-each steps, parallel-join'
+        - 'A2A server adapter with tool discovery and execution'
+        - 'Dynamic MCP tools search; `ikanos import mcp` to inspect an existing MCP server and generate an exposes: type: mcp capability'
+        - 'Skills publication in skills marketplaces; MCP/AI gateway integration; MCP trust propagation; interactive MCP Apps'
+        - 'AI framework wrappers (LangChain4j, LangChain, LlamaIndex); support the AI Catalog spec'
+    - name: Reuse existing APIs & data
+      items:
+        - 'FILE and SQL client adapters; gRPC consumption including proto import'
+        - 'HTTP client resiliency — retry, time limiter, circuit breaker, rate limiter, bulkhead, cache, fallback'
+        - 'Webhook server adapter; token refresh on consumed APIs; mTLS client certificates; CORS configuration'
+        - 'Pagination at consumes and exposes level; HTTP cache-control directives'
+        - 'Client SDK generation in the Ikanos CLI (TypeScript, Python, Java, Go), extensible to third-party generators'
+    - name: Core developer experience
+      items:
+        - 'Starter capability templates (golden-path skeletons)'
+        - 'Publish Naftiko JSON Structure; publish the JSON Schema to JSON Schema Store'
+        - 'Live generated capability UI (Swagger UI / Redocly style); Control web app per capability'
+        - 'Reference bridge capabilities (RSS/Atom, XML/SOAP, CSV); Docker Desktop Extension'
+enterprise_availability:
+  - {component: 'Warden — Backstage scaffolding + cataloging', status: 'design partners, H2 2026', repo: 'https://github.com/naftiko/fleet'}
+  - {component: 'Skipper — Kubernetes operator (CRDs + Helm)', status: 'design partners, H2 2026', repo: 'https://github.com/naftiko/fleet'}
+  - {component: 'Developer edition managed hosting', status: 'in development'}
+  - {component: 'Team edition managed production hosting', status: 'in development'}

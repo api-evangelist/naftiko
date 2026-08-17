@@ -1,0 +1,88 @@
+generated: '2026-08-17'
+method: searched
+source: https://naftiko.io/platform/editions
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Naftiko publishes four named editions on a public editions page, with a full
+  feature-by-edition comparison table — but no monetary price, no quota and no overage on
+  any of them. Community is stated "free forever"; Developer and Team are both marked
+  "Coming soon · Status · In development"; Enterprise is "Trial available · Status ·
+  Design partners · H2 2026". The two engines (Ikanos and Polychro) stay Apache 2.0 in
+  all four editions, so the free tier is the software itself rather than a metered
+  allowance. Prices below are recorded as null because Naftiko does not publish them —
+  that is the finding, not a gap in the harvest.
+plan_count: 4
+currency: null
+pricing_model: edition-tiers-unpriced
+plans:
+  - id: community
+    name: Community
+    price: null
+    price_note: 'Free forever. Free for personal and internal business use. Self-hosted on your own infrastructure.'
+    billing_period: null
+    status: available
+    included:
+      - 'Apache 2.0 core — Ikanos capability engine + Polychro spec linter'
+      - 'Capability spec + JSON Schema'
+      - 'REST, MCP and Agent Skill exposure from one spec'
+      - 'CLI (validate, run, control)'
+      - 'Self-hosted on Docker or Kubernetes'
+      - 'Shipyard docs hub'
+      - 'Crafter — capability builder for VS Code and AI IDEs'
+      - 'Polychro rule packs (built-in)'
+      - 'Community support (GitHub Discussions)'
+    excluded:
+      - 'Managed hosting'
+      - 'Warden (Backstage), Skipper (Kubernetes operator)'
+      - 'SLA, continuous compliance, domain dashboards + RBAC'
+  - id: developer
+    name: Developer
+    price: null
+    price_note: 'Not published. Described as usage-based — "you only pay while it is serving". Marked Coming soon / In development.'
+    billing_period: null
+    status: in-development
+    included:
+      - 'Everything in Community'
+      - 'Managed hosting for prototypes and demos — push a capability, get a live endpoint'
+    excluded:
+      - 'Always-warm production hosting'
+      - 'Dedicated tenancy'
+      - 'SLA'
+  - id: team
+    name: Team
+    price: null
+    price_note: 'Not published. Described as always-warm, usage-based managed production hosting. Marked Coming soon / In development.'
+    billing_period: null
+    status: in-development
+    included:
+      - 'Everything in Developer'
+      - 'Managed production hosting — always-warm instances, no cold start, higher throughput'
+      - 'SLA'
+      - 'Polychro rule packs: built-in + custom'
+    excluded:
+      - 'Warden, Skipper'
+      - 'Dedicated tenancy'
+      - 'Continuous compliance, domain dashboards + RBAC'
+  - id: enterprise
+    name: Enterprise
+    price: null
+    price_note: 'Not published — request a demo. Design-partner programme, general availability targeted H2 2026.'
+    billing_period: null
+    status: design-partners
+    included:
+      - 'Everything in Team'
+      - 'Warden — Backstage scaffolding + cataloging'
+      - 'Skipper — Kubernetes operator (CRDs + Helm)'
+      - 'Dedicated tenancy or deployment in your own infrastructure'
+      - 'Polychro rule packs: built-in + custom + federation'
+      - 'Continuous compliance (NIST, SOC 2, PCI, GDPR) — a product capability offered to the customer, not a Naftiko certification'
+      - 'Domain-level dashboards + RBAC'
+      - 'Dedicated success engineer'
+notes:
+  - 'No quota, rate limit, seat count or overage rate appears anywhere on the editions page — see rate-limits/naftiko-rate-limits.yml.'
+  - >-
+    The "Continuous compliance (NIST, SOC2, PCI, GDPR)" row describes what Warden/Skipper
+    let a customer enforce on their own capabilities. It is not a claim that Naftiko holds
+    those certifications, and no Compliance pointer was emitted on the strength of it.
+  - 'Naftiko states the capability YAML, rulesets and policies carry forward across every edition unchanged — no rewrite when moving tier.'

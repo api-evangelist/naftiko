@@ -1,19 +1,56 @@
 aid: naftiko
 name: Naftiko
-description: 'Naftiko is a company surfaced as a portfolio company of serena and added to the API Evangelist
-  network as a stub for enrichment. Sector: ai-data. This profile is a lead awaiting the enrichment pipeline.'
+description: >-
+  Naftiko builds spec-driven integration software for AI agents. Its two Apache 2.0 Java
+  engines — Ikanos, a capability engine, and Polychro, a polyglot spec linter — let a team
+  declare a slice of its business in a single YAML capability file and serve it
+  simultaneously over MCP, Agent Skill, REST and a Control port without writing or
+  compiling code. A capability consumes the HTTP APIs an organisation already has,
+  structures their responses into clean JSON, then aggregates and orchestrates those
+  operations into one governed contract for agents, applications and partners. Naftiko
+  operates no hosted API of its own: it distributes software customers run on their own
+  infrastructure, so this profile catalogs a published JSON Schema, a governance ruleset, a
+  CLI, container images and Maven artifacts rather than endpoints and API keys. Four
+  editions are published — Community (free forever, Apache 2.0), Developer and Team
+  (managed hosting, in development) and Enterprise (Warden and Skipper, design partners) —
+  none of them carrying a published price.
+image: https://naftiko.github.io/docs/images/logo/logo_full_color_512.png
 url: https://raw.githubusercontent.com/api-evangelist/naftiko/refs/heads/main/apis.yml
 x-type: company
 x-source: serena-portfolio
-x-tier: stub
-x-tier-reason: portfolio-lead
 specificationVersion: '0.20'
 created: '2026-08-17'
 modified: '2026-08-17'
 tags:
 - Company
 - Ai Data
+- API Integration
+- API Governance
+- Model Context Protocol
+- Agent Skills
+- Open Source
+- Developer Tools
+- API Specifications
+- Spec-Driven Integration
+- Capability Engine
+- API Linting
 apis: []
+x-apis-note: >-
+  Deliberately empty, and this is a measurement rather than an unfinished harvest. Naftiko
+  publishes no OpenAPI, no AsyncAPI, no GraphQL schema and no hosted API. STEP 0b contract
+  discovery was run in full against naftiko.io, shipyard.naftiko.io, ikanos.io,
+  polychro.io, mocks.naftiko.net, api.naftiko.io and app.naftiko.io: naftiko.io hard-404s
+  every spec path, shipyard.naftiko.io is a single-page app whose catch-all answers 200
+  with a 760-byte HTML shell for every path (recorded as misses, not hits), ikanos.io and
+  polychro.io are 302 vanity redirects into that same SPA, api. and app. do not resolve in
+  DNS, and mocks.naftiko.net answers 401 on every path. Three HTTP surfaces are documented
+  but none is a Naftiko-operated endpoint with a base URL: the Control port on a running
+  capability (default localhost:9090), the Skill Server (default localhost:9700), and the
+  MCP server the engine generates from the customer's own capability YAML. All three run on
+  the customer's infrastructure and are recorded in conventions/, skills/ and mcp/
+  respectively. The 136 OpenAPI files in naftiko/sandboxes describe third-party APIs
+  (Anthropic, Slack, GitHub, Google and others) used as mock fixtures; they were not
+  harvested as Naftiko contracts.
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -22,3 +59,161 @@ maintainers:
 common:
 - type: Website
   url: https://naftiko.io/
+- type: DeveloperPortal
+  name: Shipyard — Naftiko's documentation hub
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/
+- type: Documentation
+  name: Ikanos documentation (versioned per release)
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/
+- type: APIReference
+  name: Ikanos Capability Specification reference
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/spec/
+- type: GettingStarted
+  name: Installation
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/installation/
+- type: CLI
+  name: ikanos CLI — command surface, exit codes, control port
+  url: cli/naftiko-cli.yml
+- type: CLI
+  name: ikanos CLI reference (published)
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+- type: JSONSchema
+  name: Ikanos Capability Specification — JSON Schema 2020-12
+  url: json-schema/naftiko-ikanos-capability-schema.json
+- type: Rules
+  name: Ikanos governance ruleset — 33 first-party rules enforced by Polychro
+  url: rules/naftiko-ikanos-ruleset.yml
+- type: Vocabulary
+  name: Naftiko glossary — 32 published terms
+  url: vocabulary/naftiko-vocabulary.yml
+- type: Glossary
+  url: https://naftiko.io/resources/glossary
+- type: Packages
+  name: First-party distributions — Maven Central, GHCR, Docker Hub, GitHub Releases, VS Code Marketplace
+  url: packages/naftiko-packages.yml
+- type: MCPServer
+  name: MCP posture — Naftiko generates MCP servers, operates none
+  url: mcp/naftiko-mcp.yml
+- type: AgentSkill
+  name: Provider-published agent instruction files (verbatim)
+  url: skills/_index.yml
+- type: Sandbox
+  name: Naftiko Sandboxes — 136 mocked third-party specs, 25 deployable capabilities
+  url: sandbox/naftiko-sandbox.yml
+- type: Conventions
+  name: Specification, control-port and observability semantics
+  url: conventions/naftiko-conventions.yml
+- type: Conformance
+  name: Standards the engine implements versus standards it only names
+  url: conformance/naftiko-conformance.yml
+- type: Lifecycle
+  name: Versioning, per-version EOL table, roadmap
+  url: lifecycle/naftiko-lifecycle.yml
+- type: Deprecation
+  name: Per-version end-of-life dates published in the release table
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/releases/
+- type: ChangeLog
+  name: Release record — GitHub Releases plus the docs release/EOL table
+  url: changelog/naftiko-changelog.yml
+- type: ChangeLog
+  name: Ikanos releases (published)
+  url: https://github.com/naftiko/ikanos/releases
+- type: Roadmap
+  url: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+- type: Plans
+  name: Four editions, none priced
+  url: plans/naftiko-plans-pricing.yml
+- type: Pricing
+  url: https://naftiko.io/platform/editions/
+- type: RateLimits
+  name: No published limits — no hosted API to limit
+  url: rate-limits/naftiko-rate-limits.yml
+- type: DomainSecurity
+  url: security/naftiko-domain-security.yml
+- type: LLMsTxt
+  name: Generated — Naftiko publishes no llms.txt
+  url: llms/naftiko-llms.txt
+- type: GitHubOrganization
+  url: https://github.com/naftiko
+- type: SourceCode
+  name: Ikanos — the capability engine
+  url: https://github.com/naftiko/ikanos
+- type: SourceCode
+  name: Polychro — the polyglot spec linter
+  url: https://github.com/naftiko/polychro
+- type: OpenSource
+  url: https://naftiko.io/community/open-source/
+- type: Support
+  url: https://naftiko.io/company/contact-us/
+- type: Community
+  url: https://naftiko.io/community/
+- type: Blog
+  url: https://naftiko.io/resources/blog
+- type: BlogRSS
+  url: https://naftiko.io/feed.xml
+- type: TermsOfService
+  url: https://naftiko.io/legal/terms/
+- type: PrivacyPolicy
+  url: https://naftiko.io/legal/privacy/
+x-pointers-deliberately-withheld:
+  description: >-
+    Recorded so a later round does not "fix" these as oversights. Each is a canonical
+    pointer the rating reads, each has an artifact in this repo that superficially supports
+    it, and each was withheld because the underlying thing is a product feature Naftiko
+    sells rather than a commitment Naftiko makes about a surface of its own.
+  withheld:
+  - type: Idempotency
+    why: >-
+      The capability schema defines an `idempotent` boolean in two places ($defs.Semantics
+      and $defs.McpToolHints), but those are declarations a capability AUTHOR makes about
+      their own tools. Naftiko exposes no callable surface, publishes no idempotency-key
+      header and states no replay contract, so the agent-readiness question — can an agent
+      safely retry a call to this provider — has no subject. See conventions/.
+  - type: SDKs
+    why: >-
+      packages/ holds 8 genuine first-party distributions, but they are the product itself
+      (engine, CLI, linter, container image, IDE extension), not client libraries for an
+      API. Naftiko's own roadmap lists "Client SDK generation in the Ikanos CLI
+      (TypeScript, Python, Java, Go)" as unshipped future work. Packages is wired; SDKs is
+      not.
+  - type: WellKnown
+    why: >-
+      well-known/naftiko-well-known.yml documents zero documents across six hosts. The
+      shipyard SPA returns HTTP 200 for every /.well-known/* path with an HTML shell; those
+      were recorded as misses. A pointer would assert Naftiko serves a discovery surface it
+      does not serve.
+  - type: SecurityTxt
+    why: 'No security.txt on any host, and no SECURITY.md in naftiko/ikanos or the org .github repo.'
+  - type: Security
+    why: >-
+      probe-security-programs.py found no vulnerability-disclosure policy, no security@
+      contact, no disclosure page and no bug-bounty programme. Nothing to point at.
+  - type: Compliance
+    why: >-
+      The only place SOC 2, PCI, NIST and GDPR appear is the Enterprise column of the
+      editions table, describing continuous compliance the PRODUCT would let a customer
+      enforce over their own capabilities. Naftiko publishes no trust centre, certification
+      or audit report of its own.
+  - type: StatusPage
+    why: 'status.naftiko.io does not resolve. With Community running on customer infrastructure, none would apply until managed hosting ships.'
+  - type: AgentCard
+    why: >-
+      Probed /.well-known/agent-card.json and the legacy /.well-known/agent.json on every
+      host — 404 on naftiko.io, SPA shell on shipyard.naftiko.io, 302 on ikanos.io, 401 on
+      mocks.naftiko.net. A2A is a roadmap item, not a shipped adapter. Per pipeline rule,
+      nothing was written to a2a/ at all.
+  - type: AsyncAPI
+    why: >-
+      AsyncAPI has a Naftiko glossary entry claiming support, but no asyncapi path exists
+      anywhere in the shipped schema, CLI or repository tree, and a webhook server adapter
+      is still listed as future work. A documentation-versus-implementation gap, not an
+      event surface.
+  - type: Signup
+    why: 'No account signup exists — nothing is purchasable. Community is a download; Developer and Team are in development; Enterprise is a demo request.'
+  - type: PostmanWorkspace
+    why: 'No public Postman workspace or collection found for Naftiko, Ikanos or Polychro.'
+x-enrichment:
+  date: '2026-08-17'
+  status: enriched
+  artifacts_added: 11
+  pass: local-v1

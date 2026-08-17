@@ -1,0 +1,35 @@
+generated: '2026-08-17'
+method: searched
+source: https://naftiko.io/platform/editions
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Naftiko publishes no rate limits, and the reason is structural rather than an omission.
+  There is no hosted Naftiko API to limit: the Community edition is software the customer
+  runs on their own infrastructure, so throughput is bounded by the customer's own machine,
+  not by a Naftiko quota. The editions page — the one page where a limit would appear —
+  carries a full feature-by-edition comparison table with no quota, no request ceiling, no
+  seat count and no overage rate in any column. The two editions where a Naftiko-enforced
+  limit would eventually apply (Developer and Team managed hosting) are both marked
+  "Coming soon · In development" and are not purchasable, so no limits exist to publish yet.
+limit_count: 0
+headers_documented: false
+status_code_on_exhaustion: null
+limits: []
+pages_checked:
+  - {url: 'https://naftiko.io/platform/editions/', status: 200, result: 'no quota, limit, or overage in any of the four edition columns'}
+  - {url: 'https://shipyard.naftiko.io/ikanos/1.0.0-beta3/features/', status: 200, result: 'no rate-limit feature or configuration documented'}
+  - {url: 'https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/', status: 200, result: 'no rate-limit flags or headers in the CLI reference'}
+  - {url: 'https://mocks.naftiko.net/', status: 401, result: 'the one Naftiko-operated HTTP host; gated, so no unauthenticated response headers observable'}
+engine_capability_note: >-
+  A distinction worth holding: rate limiting appears on Naftiko's ROADMAP as something the
+  engine will do FOR its operator — "HTTP client resiliency — retry, time limiter, circuit
+  breaker, rate limiter, bulkhead, cache, fallback" is listed under future work on consumed
+  upstream APIs. That is a product feature the customer would configure against their own
+  upstreams. It is not a limit Naftiko imposes on a caller, it is not shipped as of
+  v1.0.0-beta4, and it was not counted as a published limit here.
+future_signal: >-
+  Naftiko describes the Developer edition as usage-based — "you only pay while it is
+  serving" — and the Team edition as always-warm with an SLA. When managed hosting ships,
+  a metering and limit surface becomes relevant and this artifact should be re-harvested.
+  See plans/naftiko-plans-pricing.yml, where all four editions carry price: null.

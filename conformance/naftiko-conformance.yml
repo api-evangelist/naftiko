@@ -1,0 +1,135 @@
+generated: '2026-08-17'
+method: searched
+source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Which cross-cutting standards Naftiko's shipped software genuinely implements, and which
+  it only names. Read against the Ikanos feature table, the CLI reference, the capability
+  JSON Schema (json-schema/naftiko-ikanos-capability-schema.json) and the governance rule
+  pack (rules/naftiko-ikanos-ruleset.yml). Two distinctions matter here and are held
+  throughout: (1) these are conformance claims about the ENGINE Naftiko distributes, not
+  about a hosted Naftiko API — there is no hosted Naftiko API; (2) an item a customer can
+  enforce with the product is not a certification Naftiko holds. No organisational
+  compliance certification (SOC 2, ISO 27001, PCI, HIPAA, FedRAMP) is published anywhere
+  on Naftiko's public surface, so no Compliance pointer was emitted.
+conformance:
+  - id: json-schema-2020-12
+    conforms: true
+    evidence: >-
+      The capability specification is published as a JSON Schema declaring
+      "$schema": "https://json-schema.org/draft/2020-12/schema" with
+      $id https://ikanos.io/schemas/v1.0.0-beta2/ikanos.json, 7 root properties
+      (ikanos, info, consumes, exposes, aggregates, binds, capability) and 86 $defs.
+      `ikanos validate` validates capability YAML against it, and io.polychro ships a
+      dedicated polychro-json-schema module. Captured verbatim at
+      json-schema/naftiko-ikanos-capability-schema.json.
+    source: https://raw.githubusercontent.com/naftiko/ikanos/main/modules/ikanos-spec/src/main/resources/schemas/ikanos-schema.json
+  - id: openapi
+    conforms: true
+    versions: ['Swagger 2.0', 'OAS 3.0', 'OAS 3.1']
+    evidence: >-
+      Bidirectional. `ikanos import openapi <source>` converts Swagger 2.0 / OAS 3.0 /
+      OAS 3.1 into an Ikanos consumes file; `ikanos export openapi <capability>
+      --spec-version <3.0|3.1>` emits a REST adapter as OpenAPI. Implemented in
+      modules/ikanos-spec/src/main/java/io/ikanos/spec/openapi (OasImportConverter,
+      OasExportBuilder, OasYamlWriter) with round-trip integration tests.
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+  - id: mcp
+    conforms: true
+    evidence: >-
+      MCP is a first-class exposure adapter. The capability schema defines ExposesMcp,
+      McpTool, McpToolHints, McpToolInputParameter, McpResource, McpPrompt,
+      McpPromptArgument and McpPromptMessage — tools, resources and prompts, the full MCP
+      surface. The roadmap commits to upgrading the engine transport to the July 2026
+      protocol revision and to adding `ikanos import mcp`. This makes Naftiko an MCP
+      server GENERATOR; Naftiko itself operates no hosted MCP endpoint (see mcp/naftiko-mcp.yml).
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/spec/
+  - id: agent-skills
+    conforms: true
+    evidence: >-
+      "Skill" is an exposure adapter alongside REST and MCP — "one YAML spec served as
+      MCP, Skill, REST, and Control ports" (beta1 release note), with a skill-groups
+      tutorial step (step-8-shipyard-skill-groups.yml) in the docs module. Naftiko's own
+      glossary defines Agent Skills as "downloadable skill folders with SKILL.md prompt
+      integration".
+    source: https://naftiko.io/glossary/agent-skills/
+  - id: oauth2
+    conforms: true
+    evidence: >-
+      Listed in the Ikanos feature table as consumption auth: "Bearer, API key, basic,
+      digest, OAuth 2.1 auth out of the box". An end-to-end test fixture exercises an
+      exposed OAuth2 flow against Keycloak
+      (.github/e2e/resources/features/exposed-oauth2/capability.yml, realm-e2e.json).
+      This is auth the engine speaks to upstream and downstream systems — Naftiko
+      publishes no authorization server of its own.
+    source: https://github.com/naftiko/ikanos
+  - id: opentelemetry
+    conforms: true
+    evidence: >-
+      "OTel tracing, RED metrics, Prometheus scrape" in the feature table; an OTel
+      collector config, Grafana dashboards and Prometheus scrape config ship in
+      modules/ikanos-docs/demo/observability/; the engine keeps a trace ring buffer
+      surfaced through the control port and `ikanos traces`. The roadmap adds gateway
+      context propagation via OpenTelemetry.
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/features/
+  - id: prometheus
+    conforms: true
+    evidence: 'Control port serves GET /metrics in Prometheus exposition format; `ikanos metrics --filter <regex>` reads it.'
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/cli/
+  - id: spectral-rule-shape
+    conforms: partial
+    evidence: >-
+      The shipped governance rule pack uses the Spectral rule vocabulary — message,
+      description, severity, recommended, given (JSONPath), then, plus custom JS functions
+      under ./functions — and the ikanos repo also carries a .spectral.yaml. It is
+      executed by Polychro, Naftiko's own linter, not by Spectral, so this is
+      shape-compatibility rather than conformance to a Spectral runtime.
+    source: rules/naftiko-ikanos-ruleset.yml
+  - id: a2a
+    conforms: false
+    evidence: >-
+      Named as a target, not shipped. "Agentic with A2A server adapter with tool discovery
+      and execution" is a roadmap item, and A2A has a glossary entry, but the capability
+      schema defines no A2A exposure adapter and no agent card is served on any Naftiko
+      host (see well-known/naftiko-well-known.yml).
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  - id: asyncapi
+    conforms: false
+    evidence: >-
+      AsyncAPI has a Naftiko glossary entry that says it is "supported by Naftiko for
+      consuming asynchronous integrations", but nothing in the shipped schema, CLI or
+      repository tree implements it — no asyncapi path exists anywhere in naftiko/ikanos,
+      and the roadmap still lists a webhook server adapter as future work. Recorded as a
+      documentation-vs-implementation gap, not as support.
+    source: https://naftiko.io/glossary/asyncapi/
+  - id: grpc
+    conforms: false
+    evidence: 'Protobuf appears only as a data-format conversion target (Protobuf → JSON). gRPC consumption including proto import is a roadmap item. No .proto files are published in the org.'
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  - id: json-structure
+    conforms: false
+    evidence: '"Publish Naftiko JSON Structure" is a roadmap item; io.polychro:polychro-json-structure exists as a linter format module, but Naftiko publishes no JSON Structure document of its own.'
+    source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/roadmap/
+  - id: rfc9457-problem-details
+    conforms: unknown
+    evidence: 'No error envelope or problem-details format is documented on any public Naftiko surface, and there is no OpenAPI to derive one from. Not asserted either way.'
+  - id: soc2-iso27001-pci-hipaa
+    conforms: false
+    evidence: >-
+      Naftiko publishes no trust centre, no certification, and no audit report. The one
+      place these names appear is the Enterprise column of the editions table —
+      "Continuous compliance (NIST, SOC2, PCI, GDPR)" — which describes a control the
+      product would let a CUSTOMER enforce over their own capabilities. It is not a claim
+      that Naftiko is certified, and it was not treated as one.
+    source: https://naftiko.io/platform/editions
+licensing:
+  license: Apache-2.0
+  scope: 'Both engines. Naftiko states "Ikanos and Polychro stay 100% Apache 2.0 in all four editions" and "100% Apache 2.0 — own the spec, not someone else''s generic server".'
+  source: https://shipyard.naftiko.io/ikanos/1.0.0-beta3/license/
+governance_rules:
+  source: rules/naftiko-ikanos-ruleset.yml
+  rule_count: 33
+  severities: {error: 14, warn: 16, info: 3}
+  custom_functions: ['unique-namespaces', 'aggregate-semantics-consistency', 'aggregate-function-unique', 'control-port-validation', 'script-defaults-required', 'standalone-no-imports', 'import-alias-unique', 'tunnel-identity']
+  note: 'Blocking and advisory policies enforced at spec validation, CI merge gates and (with Skipper, Enterprise) Kubernetes admission.'

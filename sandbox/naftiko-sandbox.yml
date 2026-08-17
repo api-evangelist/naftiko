@@ -1,0 +1,120 @@
+generated: '2026-08-17'
+method: searched
+source: https://github.com/naftiko/sandboxes
+provider: Naftiko
+providerId: naftiko
+description: >-
+  Naftiko's sandbox surface is unusual enough to be worth stating plainly: it is not test
+  credentials for a Naftiko API, because there is no Naftiko API. It is a mock-service
+  programme aimed at the OTHER end of the integration — 136 third-party OpenAPI
+  specifications mounted into a Microcks instance so a developer can build and run an
+  Ikanos capability against realistic Slack, GitHub, Google or Anthropic responses without
+  holding a single upstream credential. Two layers ship: a centrally-hosted mock host that
+  serves the responses, and roughly two dozen per-provider "sandbox" repositories that wrap
+  those mocks as one-click-deployable Ikanos capabilities. Nothing below was invented; the
+  URL pattern, the deploy targets and the spec count were read from the published repo.
+sandbox_type: mock-service-for-consumed-apis
+test_credentials_required: false
+test_vs_live_separation: 'not applicable — no Naftiko-issued keys exist, in test mode or otherwise (see authentication note below)'
+hosted_mocks:
+  name: Naftiko Mocks
+  host: https://mocks.naftiko.net
+  engine: Microcks
+  deployment: 'Cloudflare Worker + Container (wrangler.toml declares a MicrocksContainer Durable Object binding, one standard-1 instance)'
+  url_pattern: 'https://mocks.naftiko.net/rest/<info.title>/<info.version>/'
+  url_pattern_note: >-
+    The mock path is built from each spec's own info.title and info.version. CONTRIBUTING.md
+    requires info.title to be a strict slug (lowercase, hyphens, alphanumeric) and
+    info.version to avoid slashes and spaces, because both become path segments.
+  spec_count: 136
+  spec_source: https://github.com/naftiko/sandboxes/tree/main/specs
+  contribution: 'Open a PR adding a file under specs/. CI lints it; merge to main rolls the Cloudflare Worker forward automatically.'
+  probe:
+    - {url: 'https://mocks.naftiko.net/', status: 401, checked: '2026-08-17'}
+    - {url: 'https://mocks.naftiko.net/api/services', status: 401, checked: '2026-08-17'}
+    - {url: 'https://mocks.naftiko.net/rest', status: 401, checked: '2026-08-17'}
+  probe_finding: >-
+    The host is live but returns HTTP 401 with an empty body on every path probed,
+    including the root. The README presents it as the central mock target for the sandbox
+    capabilities, but an anonymous developer cannot reach it — so the documented
+    "no upstream credentials required" promise holds only for the self-deployed layer
+    below, not for the hosted mock host itself. Recorded as observed, not as a defect.
+deployable_sandboxes:
+  description: >-
+    Per-provider repositories, each an Ikanos capability wrapping the central mocks. Every
+    one carries a Cloudflare deploy button (the path Naftiko marks verified) plus Render,
+    Google Cloud Run, Railway and Replit buttons it marks unverified. Deploying one yields
+    MCP + REST + Skill endpoints on the deployer's own account.
+  index: https://github.com/naftiko/sandboxes
+  count: 25
+  credentials_required: 'none — the capability points at the shared mocks rather than the real upstream'
+  groups:
+    - group: Tutorial
+      repos:
+        - {repo: 'naftiko/shipyard-cloudflare', wraps: 'the Shipyard tutorial — a fictional Maritime Registry + Dockyard'}
+    - group: AI providers
+      repos:
+        - {repo: 'naftiko/anthropic-sandbox', wraps: 'Anthropic — Admin, Files, Messages, Models, Prompts, Message Batches'}
+        - {repo: 'naftiko/openai-sandbox', wraps: 'OpenAI — Chat, Completions, Assistants, Embeddings, Files, Models, Images, Threads'}
+    - group: Microsoft 365
+      repos:
+        - {repo: 'naftiko/microsoft-365-copilot-sandbox', wraps: 'Microsoft 365 Copilot'}
+        - {repo: 'naftiko/microsoft-excel-sandbox', wraps: 'Microsoft Excel'}
+        - {repo: 'naftiko/microsoft-outlook-sandbox', wraps: 'Microsoft Outlook — Calendar + Mail'}
+        - {repo: 'naftiko/microsoft-powerpoint-sandbox', wraps: 'Microsoft PowerPoint'}
+        - {repo: 'naftiko/microsoft-teams-sandbox', wraps: 'Microsoft Teams'}
+        - {repo: 'naftiko/microsoft-word-sandbox', wraps: 'Microsoft Word'}
+    - group: Vendor APIs
+      repos:
+        - {repo: 'naftiko/bluesky-sandbox', wraps: 'Bluesky Social API (AT Protocol)'}
+        - {repo: 'naftiko/figma-sandbox', wraps: 'Figma — Files, Images, Me, Payments, Projects, Styles, Teams, Activity Logs'}
+        - {repo: 'naftiko/github-sandbox', wraps: 'GitHub — Organizations, Projects, Repos, Search, Users'}
+        - {repo: 'naftiko/google-sandbox', wraps: 'Google — Calendar, Docs, Drive, Drive Activity, Drive Labels, Gemini, Gmail, Sheets'}
+        - {repo: 'naftiko/hubspot-sandbox', wraps: 'HubSpot — Analytics Events, Custom Workflow Actions, Domains, Engagements, Marketing Email, OAuth, Source Code'}
+        - {repo: 'naftiko/linkedin-sandbox', wraps: 'LinkedIn — Marketing, Compliance, Sales Navigator, Talent, Data Portability, Ads Transparency (17 APIs)'}
+        - {repo: 'naftiko/notion-sandbox', wraps: 'Notion API'}
+        - {repo: 'naftiko/slack-sandbox', wraps: 'Slack — Admin, Apps, Auth, Bots, Channels, Chat, Conversations, Files, Reactions, Stars, Team, Users, Views, Workflows (24 APIs)'}
+        - {repo: 'naftiko/webflow-sandbox', wraps: 'Webflow — Sites, Pages, Forms, Form Submissions, Webhooks, Workspaces, Tokens, Asset Folders, Assets'}
+        - {repo: 'naftiko/youtube-sandbox', wraps: 'YouTube — Data + Analytics'}
+        - {repo: 'naftiko/zoom-sandbox', wraps: 'Zoom — Account, IM, Meeting, Metrics, Recording, Report, User, Webinar'}
+    - group: Apache
+      repos:
+        - {repo: 'naftiko/apache-airflow-sandbox', wraps: 'Apache Airflow', note: 'capability scaffold; Naftiko states the OpenAPI is not yet wired'}
+        - {repo: 'naftiko/apache-flink-sandbox', wraps: 'Apache Flink REST API'}
+        - {repo: 'naftiko/apache-spark-sandbox', wraps: 'Apache Spark REST API'}
+    - group: Standards and frameworks
+      repos:
+        - {repo: 'naftiko/nist-cybersecurity-framework-sandbox', wraps: 'NIST CSF 2.0'}
+        - {repo: 'naftiko/nist-sp-800-53-sandbox', wraps: 'NIST SP 800-53 controls'}
+playground:
+  url: https://shipyard.naftiko.io/playground
+  status: 'present in the published docs navigation of every versioned Ikanos docs tree'
+  probe: {url: 'https://shipyard.naftiko.io/playground/', status: 200, content_type: 'text/html', size: 760}
+  finding: >-
+    Linked from the docs nav alongside /fleet and /polychro, but it renders entirely
+    client-side: an unauthenticated fetch returns the same 760-byte SPA shell the whole
+    shipyard host returns for any path, so its contents could not be read or verified
+    without executing JavaScript. Recorded as an observed link, not as a verified console.
+    No Sandbox pointer rests on this alone.
+local_developer_loop:
+  description: 'The offline equivalent of a hosted sandbox — everything needed to exercise a capability on a laptop before any upstream is involved.'
+  items:
+    - {tool: 'ikanos serve', description: 'Run a capability locally and block until stopped. Same command contract in the CLI and the container.'}
+    - {tool: 'ikanos validate <file>', description: 'Validate capability YAML against the bundled JSON Schema before running it.'}
+    - {tool: 'docker run ghcr.io/naftiko/ikanos', description: 'Anonymously pullable image, 24 tags. Entrypoint defaults to `ikanos serve` reading /app/ikanos.yaml.'}
+    - {tool: 'Control port', description: 'GET /health/live, /health/ready, /status, /metrics, /traces on a running capability — the local inspection surface. See cli/naftiko-cli.yml.'}
+    - {tool: 'Reverse tunnel', description: 'A documented guide at shipyard.naftiko.io/ikanos/1.0.0-beta3/guide/reverse-tunnel/ for exposing a locally-run capability.'}
+    - {tool: 'Schema examples', description: 'Capability examples shipped in the repo at modules/ikanos-spec/src/main/resources/schemas/examples/ (cir.yml, notion.yml, skill-adapter.yml, …), per the published AGENTS.md.'}
+    - {tool: 'Tutorial fixtures', description: 'A 10-step Shipyard tutorial (step-1 … step-10) in modules/ikanos-docs/tutorial/, backed by the shipyard-cloudflare sandbox above.'}
+authentication_note: >-
+  There are no Naftiko-issued API keys, no test/live key prefixes and no magic test values
+  to capture, because Naftiko issues no credentials. Auth in this product is something the
+  engine SPEAKS to a customer's upstreams (Bearer, API key, basic, digest, OAuth 2.1) —
+  configured by the capability author against their own systems. That is why no
+  authentication/naftiko-authentication.yml was written: an auth profile here would
+  describe the customer's APIs, not Naftiko's.
+ownership_note: >-
+  The 136 specifications under specs/ describe THIRD-PARTY APIs (Anthropic, OpenAI, Slack,
+  GitHub, Google, Webflow, Apache and others). They are mock fixtures Naftiko hosts, not
+  contracts Naftiko authored or serves, so none of them was harvested into openapi/ as a
+  Naftiko API. Doing so would have credited Naftiko with two dozen APIs it does not ship.
