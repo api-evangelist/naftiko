@@ -1,0 +1,21 @@
+{
+  "repo": "naftiko",
+  "feeds": [
+    {
+      "source": "https://naftiko.io/community/",
+      "feed_url": "https://naftiko.io/community/",
+      "title": "",
+      "saved": 0,
+      "method": "none"
+    },
+    {
+      "source": "https://naftiko.io/resources/blog",
+      "feed_url": "https://naftiko.io/resources/blog",
+      "title": "",
+      "saved": 0,
+      "method": "none"
+    }
+  ],
+  "post_count": 0,
+  "fetched": "2026-08-22T20:20:02Z"
+}
