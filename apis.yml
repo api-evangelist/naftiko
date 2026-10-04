@@ -15,16 +15,20 @@ description: >-
   (managed hosting, in development) and Enterprise (Warden and Skipper, design partners) —
   none of them carrying a published price.
 deliveryModel:
-  model: unknown
+  model: saas
+  license_evidence:
+    not_product:
+    - naftiko/ikanos
+    - naftiko/polychro
   open_source: unknown
   commercial: true
   callable_host: false
-  label: Delivery model not determined — needs a product licence on record
+  label: Hosted service · you call their endpoint
   confidence: low
   source:
   - pricing
-  - repository-unlicensed
-  generated: '2026-08-28'
+  - repository-not-product
+  generated: '2026-09-25'
   method: derived
 accessModel:
   pricing: freemium
@@ -55,7 +59,7 @@ tags:
 - API Governance
 - MCP
 - Agent Skills
-- Open-Source
+- Open Source
 - Developer Tools
 - API Specification
 - Spec-Driven Integration
@@ -74,6 +78,7 @@ tags_raw:
 - Spec-Driven Integration
 - Capability Engine
 - API Linting
+- Open-Source
 apis: []
 x-apis-note: >-
   Deliberately empty, and this is a measurement rather than an unfinished harvest. Naftiko
