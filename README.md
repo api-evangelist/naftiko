@@ -64,6 +64,120 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Naftiko is a company surfaced as a portfolio company of serena and added to the API Evangelist network as a stub for enrichment. Sector: ai-data. This profile is a lead awaiting the enrichment pipeline.
+Naftiko builds spec-driven integration software for AI agents. Its two Apache 2.0 Java engines — Ikanos, a capability engine, and Polychro, a polyglot spec linter — let a team declare a slice of its business in a single YAML capability file and serve it simultaneously over MCP, Agent Skill, REST and a Control port without writing or compiling code. A capability consumes the HTTP APIs an organisation already has, structures their responses into clean JSON, then aggregates and orchestrates those operations into one governed contract for agents, applications and partners. Naftiko operates no hosted API of its own: it distributes software customers run on their own infrastructure, so this profile catalogs a published JSON Schema, a governance ruleset, a CLI, container images and Maven artifacts rather than endpoints and API keys. Four editions are published — Community (free forever, Apache 2.0), Developer and Team (managed hosting, in development) and Enterprise (Warden and Skipper, design partners) — none of them carrying a published price.
 
-Source: portfolio company of [serena](https://github.com/api-evangelist/serena) — https://naftiko.io/
+**Areas:** Company · Ai Data · API Integration · API Governance · MCP · Agent Skills · Open Source · Developer Tools · API Specification · Spec-Driven Integration · Capability Engine · API Linting
+
+## Naftiko on APIs.io
+
+Everything profiled for Naftiko is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/naftiko/](https://apis.io/providers/naftiko/)** — or go straight to one of the APIs or properties below.
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### MCP servers (1)
+
+Model Context Protocol servers that expose the API to agents.
+
+- [MCP posture — Naftiko generates MCP servers, operates none](https://apis.io/servers/naftiko/mcp-posture-naftiko-generates-mcp-servers-operates-none/)
+
+#### JSON Schema (1)
+
+The data models the API reads and writes.
+
+- [Naftiko Ikanos Capability](https://apis.io/schemas/naftiko/naftiko-ikanos-capability/)
+
+#### Governance rules (2)
+
+Spectral rulesets for the provider's contracts.
+
+- [Naftiko — ikanos rules](https://apis.io/rules/naftiko/naftiko-ikanos-ruleset/)
+- [Naftiko — polychro rules](https://apis.io/rules/naftiko/naftiko-polychro-spectral-rules/)
+
+#### Security (1)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Naftiko Domain Security](https://apis.io/security/naftiko/naftiko-domain-security/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Naftiko Plans Pricing](https://apis.io/plans/naftiko/naftiko-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Naftiko Rate Limits](https://apis.io/rate-limits/naftiko/naftiko-rate-limits/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://naftiko.io/)
+- [Documentation](https://shipyard.naftiko.io/ikanos/1.0.0-beta3/)
+- [Getting started](https://shipyard.naftiko.io/ikanos/1.0.0-beta3/installation/)
+- [API reference](https://shipyard.naftiko.io/ikanos/1.0.0-beta3/spec/)
+- [Pricing](https://naftiko.io/platform/editions/)
+- [Support](https://naftiko.io/company/contact-us/)
+- [Changelog](https://github.com/naftiko/ikanos/releases)
+- [Blog](https://naftiko.io/resources/blog)
+- [Terms of service](https://naftiko.io/legal/terms/)
+- [Privacy policy](https://naftiko.io/legal/privacy/)
+- [GitHub](https://github.com/naftiko)
+
+## API Evangelist rating
+
+**Kin Score 35.9** — thin · rubric 0.24.0 · scored 2026-10-17
+
+| Facet | Score |
+|---|---|
+| Discoverability | 48.3 |
+| Contract quality | 0.0 |
+| Contract governance | 31.8 |
+| Operational transparency | 31.6 |
+| Developer ergonomics | 50.0 |
+| Access clarity | 63.2 |
+
+**Agent readiness 9.6** — agent-aware
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | — |
+| Agentic Access | — |
+| Reversibility Documented | — |
+| MCP Server | documented (partial credit) |
+| Auth Clarity | — |
+| Idempotency | — |
+| Error Semantics | — |
+| OpenAPI Examples | — |
+| Rate Limit Signal | documented (partial credit) |
+| Event Surface Described | — |
+| Agent Skills | yes |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+
+**Regulatory alignment 18.6** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/naftiko/](https://apis.io/providers/naftiko/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for Naftiko: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/naftiko/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
